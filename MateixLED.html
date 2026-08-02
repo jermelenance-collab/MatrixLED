@@ -1,1 +1,2959 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Professional Offline LED Matrix Editor</title>
+  <style>
+    :root {
+      --bg-dark: #0d0e12;
+      --panel-bg: #16171d;
+      --card-bg: #1e2028;
+      --card-hover: #262833;
+      --border-color: rgba(255, 255, 255, 0.08);
+      --border-focus: #3b82f6;
+      --accent-blue: #3b82f6;
+      --accent-blue-hover: #2563eb;
+      --accent-danger: #ef4444;
+      --accent-danger-hover: #dc2626;
+      --text-main: #f1f5f9;
+      --text-muted: #94a3b8;
+      --text-subtle: #64748b;
+      --radius-sm: 6px;
+      --radius-md: 10px;
+      --radius-lg: 14px;
+      --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
+      --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.4);
+      --rainbow-speed: 50;
+    }
 
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+    }
+
+    body, html {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      font-size: 13px;
+      letter-spacing: 0.2px;
+    }
+
+    button:focus,
+    input:focus,
+    select:focus,
+    textarea:focus,
+    .btn:focus,
+    .btn-accent-color:focus,
+    .slot-btn:focus,
+    .btn-customize-panel:focus,
+    .color-preview-box:focus,
+    .cust-swatch-box:focus,
+    .restore-item-checkbox:focus {
+      outline: none;
+    }
+
+    button:active,
+    .btn:active,
+    .btn-accent-color:active,
+    .slot-btn:active,
+    .btn-customize-panel:active {
+      filter: brightness(0.85);
+      transition: filter 0.1s ease;
+    }
+
+    ::-webkit-scrollbar {
+      width: 5px;
+      height: 5px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 10px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(255, 255, 255, 0.3);
+    }
+
+    .app-container {
+      display: flex;
+      flex-direction: column;
+      width: 100vw;
+      height: 100vh;
+    }
+
+    .header-bar {
+      height: 52px;
+      background-color: var(--panel-bg);
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 16px;
+      z-index: 10;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .app-title {
+      font-weight: 700;
+      font-size: 15px;
+      letter-spacing: 0.6px;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .app-title::before {
+      content: '';
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      background-color: var(--accent-blue);
+      border-radius: 50%;
+      box-shadow: 0 0 10px var(--accent-blue);
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .btn {
+      background-color: var(--card-bg);
+      color: var(--text-main);
+      border: 1px solid var(--border-color);
+      padding: 7px 14px;
+      border-radius: var(--radius-sm);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s ease-in-out;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    }
+
+    .btn:hover:not(:disabled) {
+      background-color: var(--card-hover);
+      border-color: rgba(255, 255, 255, 0.15);
+      transform: translateY(-1px);
+    }
+
+    .btn:active:not(:disabled) {
+      transform: translateY(0);
+      opacity: 0.9;
+    }
+
+    .btn-primary {
+      background-color: var(--accent-blue);
+      border-color: var(--accent-blue);
+      color: #ffffff;
+      box-shadow: 0 2px 10px rgba(59, 130, 246, 0.3);
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      background-color: var(--accent-blue-hover);
+      border-color: var(--accent-blue-hover);
+    }
+
+    .btn-danger {
+      background-color: rgba(239, 68, 68, 0.12);
+      border-color: rgba(239, 68, 68, 0.3);
+      color: #fca5a5;
+    }
+
+    .btn-danger:hover:not(:disabled) {
+      background-color: var(--accent-danger);
+      border-color: var(--accent-danger);
+      color: #ffffff;
+    }
+
+    .btn:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+
+    .profile-btn {
+      position: relative;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background-color: var(--card-bg);
+      border: 1px solid var(--border-color);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 14px;
+      color: var(--text-main);
+      transition: background-color 0.15s, border-color 0.15s;
+    }
+    .profile-btn:hover {
+      background-color: var(--card-hover);
+      border-color: var(--accent-blue);
+    }
+    .profile-dropdown {
+      position: absolute;
+      top: 38px;
+      right: 0;
+      background: var(--panel-bg);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 8px;
+      z-index: 20;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+      min-width: 130px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .profile-dropdown .btn {
+      width: 100%;
+      justify-content: center;
+      padding: 9px 14px;
+      font-size: 12px;
+      border-radius: var(--radius-sm);
+      background-color: var(--card-bg);
+      color: var(--text-main);
+      border: 1px solid transparent;
+      transition: background-color 0.2s, border-color 0.2s, color 0.2s;
+    }
+    .profile-dropdown .btn:hover {
+      background-color: var(--card-hover);
+      border-color: var(--accent-blue);
+    }
+    #btn-sign-out {
+      color: #fca5a5;
+    }
+    #btn-sign-out:hover {
+      background-color: rgba(239, 68, 68, 0.15) !important;
+      border-color: rgba(239, 68, 68, 0.3) !important;
+      color: #fca5a5 !important;
+    }
+
+    .btn-accent-color-wrapper {
+      position: relative;
+      display: inline-flex;
+      padding: 2px;
+      border-radius: calc(var(--radius-sm) + 2px);
+      background: conic-gradient(from var(--rainbow-angle, 0deg), #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #9400d3, #ff0000);
+      box-shadow: 0 0 8px rgba(255, 255, 255, 0.3);
+      cursor: pointer;
+    }
+
+    .btn-accent-color {
+      background-color: var(--card-bg);
+      color: var(--text-main);
+      border: none;
+      padding: 6px 12px;
+      border-radius: var(--radius-sm);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: background-color 0.15s ease;
+    }
+
+    .btn-accent-color:hover {
+      background-color: var(--card-hover);
+    }
+
+    .main-body {
+      display: flex;
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .left-sidebar {
+      width: 310px;
+      background-color: var(--panel-bg);
+      border-right: 1px solid var(--border-color);
+      display: flex;
+      flex-direction: column;
+      padding: 14px;
+      gap: 12px;
+      overflow-y: auto;
+      z-index: 5;
+    }
+
+    .panel-section {
+      position: relative;
+      background-color: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      box-shadow: var(--shadow-sm);
+      z-index: 1;
+    }
+
+    .panel-header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+    }
+
+    .btn-customize-panel {
+      padding: 4px 10px;
+      font-size: 10px;
+      font-weight: 700;
+      border-radius: var(--radius-sm);
+      white-space: nowrap;
+      background-color: var(--accent-blue);
+      color: #ffffff;
+      border: none;
+      cursor: pointer;
+      box-shadow: 0 1px 4px rgba(59, 130, 246, 0.3);
+      transition: all 0.15s ease;
+    }
+
+    .btn-customize-panel:hover {
+      filter: brightness(1.1);
+      transform: translateY(-1px);
+    }
+
+    .panel-section.has-custom-border {
+      border-color: transparent !important;
+    }
+
+    .panel-section.has-custom-border::before {
+      content: '';
+      position: absolute;
+      top: -2px;
+      left: -2px;
+      right: -2px;
+      bottom: -2px;
+      border-radius: calc(var(--radius-md) + 2px);
+      z-index: -2;
+      pointer-events: none;
+      background: var(--p-border-bg, transparent);
+      box-shadow: var(--p-border-shadow, none);
+      transition: background 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .panel-section.has-custom-border::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: var(--card-bg);
+      border-radius: var(--radius-md);
+      z-index: -1;
+      pointer-events: none;
+    }
+
+    .panel-notice {
+      color: #fbbf24;
+      font-size: 11px;
+      line-height: 1.45;
+      font-weight: 500;
+      background: rgba(245, 158, 11, 0.08);
+      padding: 8px 10px;
+      border-radius: var(--radius-sm);
+      border-left: 3px solid #f59e0b;
+    }
+
+    .panel-multisection {
+      background: linear-gradient(135deg, rgba(59, 130, 246, 0.12) 0%, rgba(139, 92, 246, 0.12) 100%);
+      border: 1px solid rgba(139, 92, 246, 0.25);
+      border-radius: var(--radius-md);
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      text-align: center;
+    }
+
+    .ms-section-1 {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      color: var(--text-main);
+    }
+
+    .ms-section-2 {
+      font-size: 12px;
+      font-weight: 600;
+      background: linear-gradient(90deg, #60a5fa, #c084fc);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .ms-divider {
+      width: 40px;
+      height: 2px;
+      background-color: rgba(255, 255, 255, 0.15);
+      margin: 0 auto;
+      border-radius: 2px;
+    }
+
+    .ms-section-3 {
+      font-size: 10px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--text-muted);
+    }
+
+    .ms-link {
+      font-size: 11px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      color: #60a5fa;
+      text-decoration: none;
+      word-break: break-all;
+    }
+
+    .ms-link:hover {
+      text-decoration: underline;
+    }
+
+    .btn-reset-all {
+      background-color: var(--accent-danger);
+      border-color: var(--accent-danger);
+      color: #ffffff;
+      width: 100%;
+      padding: 10px;
+      font-weight: 700;
+      box-shadow: 0 2px 10px rgba(239, 68, 68, 0.3);
+    }
+
+    .btn-reset-all:hover:not(:disabled) {
+      background-color: var(--accent-danger-hover);
+      border-color: var(--accent-danger-hover);
+    }
+
+    .panel-info {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 10px 12px;
+      font-size: 11px;
+      line-height: 1.45;
+      color: var(--text-muted);
+      text-align: center;
+    }
+
+    .section-title {
+      font-size: 10px;
+      font-weight: 800;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      letter-spacing: 0.8px;
+    }
+
+    .color-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .color-row {
+      display: grid;
+      grid-template-columns: 95px 1fr 32px;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .color-label {
+      font-size: 11px;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .hex-input {
+      background-color: var(--bg-dark);
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      padding: 6px 8px;
+      border-radius: var(--radius-sm);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 12px;
+      text-transform: uppercase;
+      width: 100%;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+
+    .hex-input:focus {
+      outline: none;
+      border-color: var(--accent-blue);
+      box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+    }
+
+    .hex-input.invalid {
+      border-color: var(--accent-danger) !important;
+      box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2) !important;
+    }
+
+    .password-input {
+      text-transform: none !important;
+    }
+
+    .password-wrapper {
+      position: relative;
+      width: 100%;
+    }
+    .password-toggle {
+      position: absolute;
+      right: 8px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 16px;
+      padding: 2px;
+      line-height: 1;
+      transition: color 0.2s;
+    }
+    .password-toggle:hover {
+      color: var(--text-main);
+    }
+
+    .color-preview-box {
+      width: 32px;
+      height: 32px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-color);
+      background-color: #000000;
+      cursor: pointer;
+      transition: transform 0.15s, border-color 0.15s, box-shadow 0.15s;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.1);
+    }
+
+    .color-preview-box:hover {
+      transform: scale(1.08);
+      border-color: var(--accent-blue);
+      box-shadow: 0 0 8px rgba(59, 130, 246, 0.4);
+    }
+
+    .select-input {
+      background-color: var(--bg-dark);
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      padding: 7px 8px;
+      border-radius: var(--radius-sm);
+      font-size: 12px;
+      width: 100%;
+      outline: none;
+      cursor: pointer;
+      transition: border-color 0.15s;
+    }
+
+    .select-input:focus {
+      border-color: var(--accent-blue);
+    }
+
+    .slider-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .slider-header {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .range-slider {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 5px;
+      border-radius: 3px;
+      background: var(--bg-dark);
+      outline: none;
+    }
+
+    .range-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: var(--accent-blue);
+      cursor: pointer;
+      box-shadow: 0 0 8px rgba(59, 130, 246, 0.5);
+      transition: transform 0.1s, background-color 0.1s;
+    }
+
+    .range-slider::-webkit-slider-thumb:hover {
+      transform: scale(1.2);
+    }
+
+    .cust-swatch-box {
+      background: var(--bg-dark);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      padding: 4px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .cust-swatch-box:hover {
+      border-color: var(--accent-blue);
+    }
+
+    .cust-swatch-box.active {
+      border-color: var(--accent-blue);
+      box-shadow: 0 0 6px rgba(59, 130, 246, 0.5);
+      background-color: var(--card-hover);
+    }
+
+    .swatch-label {
+      font-size: 9px;
+      color: var(--text-muted);
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .swatch-color-inner {
+      width: 100%;
+      height: 18px;
+      border-radius: 4px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      background-color: #3b82f6;
+    }
+
+    .canvas-viewport {
+      flex: 1;
+      position: relative;
+      background-color: var(--bg-dark);
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      touch-action: none;
+      background-image: 
+        radial-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+      background-size: 20px 20px;
+    }
+
+    canvas {
+      display: block;
+      touch-action: none;
+    }
+
+    .right-sidebar {
+      width: 320px;
+      background-color: var(--panel-bg);
+      border-left: 1px solid var(--border-color);
+      display: flex;
+      flex-direction: column;
+      position: absolute;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 15;
+      transform: translateX(100%);
+      transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      box-shadow: var(--shadow-md);
+    }
+
+    .right-sidebar.open {
+      transform: translateX(0);
+    }
+
+    .sidebar-header {
+      padding: 12px 16px;
+      background-color: var(--card-bg);
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-weight: 700;
+      font-size: 14px;
+    }
+
+    .slots-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .slot-card {
+      background-color: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      padding: 10px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      cursor: pointer;
+      transition: border-color 0.15s, background-color 0.15s;
+    }
+
+    .slot-card:hover {
+      border-color: var(--accent-blue);
+      background-color: var(--card-hover);
+    }
+
+    .slot-card-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-weight: 600;
+      font-size: 12px;
+    }
+
+    .slot-status {
+      font-size: 9px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      text-transform: uppercase;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+
+    .status-empty {
+      background-color: rgba(255, 255, 255, 0.05);
+      color: var(--text-subtle);
+    }
+
+    .status-saved {
+      background-color: rgba(16, 185, 129, 0.15);
+      color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+
+    .slot-meta {
+      font-size: 10px;
+      color: var(--text-subtle);
+    }
+
+    .slot-buttons {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 4px;
+    }
+
+    .slot-btn {
+      padding: 4px 2px;
+      font-size: 10px;
+      font-weight: 600;
+      border-radius: 4px;
+      border: 1px solid var(--border-color);
+      cursor: pointer;
+      text-align: center;
+      background: var(--bg-dark);
+      color: var(--text-main);
+    }
+    .slot-btn.btn-save-action { color: #60a5fa; border-color: rgba(59, 130, 246, 0.3); }
+    .slot-btn.btn-load-action { color: #34d399; border-color: rgba(16, 185, 129, 0.3); }
+    .slot-btn.btn-rename-action { color: #fbbf24; border-color: rgba(245, 158, 11, 0.3); }
+    .slot-btn.btn-delete-action { color: #f87171; border-color: rgba(239, 68, 68, 0.3); }
+
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(4px);
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+    }
+
+    .modal-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .modal-card {
+      background-color: var(--panel-bg);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      width: 100%;
+      max-width: 380px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      box-shadow: var(--shadow-md);
+      transform: scale(0.95);
+      transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .modal-overlay.active .modal-card {
+      transform: scale(1);
+    }
+
+    .modal-header {
+      padding: 14px 18px;
+      background-color: var(--card-bg);
+      border-bottom: 1px solid var(--border-color);
+      font-weight: 700;
+      font-size: 14px;
+    }
+
+    .modal-body {
+      padding: 18px;
+      font-size: 13px;
+      line-height: 1.5;
+      color: var(--text-muted);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .modal-footer {
+      padding: 12px 18px;
+      background-color: var(--card-bg);
+      border-top: 1px solid var(--border-color);
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+
+    .deleted-item-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--card-bg);
+      padding: 10px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-color);
+    }
+    .deleted-item-row label {
+      color: var(--text-main);
+      font-weight: 600;
+      flex: 1;
+      cursor: pointer;
+    }
+    .deleted-item-date {
+      font-size: 10px;
+      color: var(--text-subtle);
+    }
+    .restore-item-checkbox {
+      width: 18px;
+      height: 18px;
+      accent-color: var(--accent-blue);
+      cursor: pointer;
+    }
+    .btn-semi-transparent {
+      background-color: rgba(59, 130, 246, 0.15);
+      border-color: rgba(59, 130, 246, 0.3);
+      color: #ffffff;
+    }
+    .btn-semi-transparent:hover {
+      background-color: rgba(59, 130, 246, 0.3);
+    }
+
+    .auth-tabs {
+      display: flex;
+      gap: 0;
+      margin-bottom: 0;
+    }
+    .auth-tab {
+      flex: 1;
+      padding: 10px 12px;
+      text-align: center;
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-bottom: none;
+      cursor: pointer;
+      color: var(--text-muted);
+      font-weight: 600;
+      font-size: 12px;
+      border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+      transition: all 0.2s;
+    }
+    .auth-tab.active {
+      background: var(--panel-bg);
+      color: var(--text-main);
+      border-bottom: 1px solid transparent;
+      margin-bottom: -1px;
+      font-weight: 700;
+    }
+    .auth-form {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      padding: 16px;
+      background: var(--panel-bg);
+      border-radius: 0 0 var(--radius-sm) var(--radius-sm);
+      border: 1px solid var(--border-color);
+      border-top: none;
+    }
+
+    input[type=number]::-webkit-inner-spin-button, 
+    input[type=number]::-webkit-outer-spin-button { 
+      -webkit-appearance: none; 
+      margin: 0; 
+    }
+    input[type=number] {
+      -moz-appearance: textfield;
+    }
+
+    @media (max-width: 600px) {
+      .main-body {
+        flex-direction: column;
+      }
+      .left-sidebar {
+        width: 100%;
+        height: auto;
+        max-height: 42vh;
+        border-right: none;
+        border-bottom: 1px solid var(--border-color);
+      }
+      .right-sidebar {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <header class="header-bar">
+      <div class="app-title">
+        <span>LED Matrix Editor</span>
+      </div>
+      <div class="header-actions">
+        <button id="btn-deleted-projects" class="btn">Deleted Projects</button>
+        <div class="btn-accent-color-wrapper" id="btn-accent-wrapper">
+          <button id="btn-accent-color" class="btn-accent-color">Accent Color</button>
+        </div>
+        <button id="btn-undo" class="btn">Undo</button>
+        <button id="btn-redo" class="btn">Redo</button>
+        <button id="btn-export" class="btn btn-primary">Export PNG</button>
+        <button id="btn-toggle-saves" class="btn">Saves</button>
+        <div id="profile-btn" class="profile-btn" title="Account">
+          <span id="profile-avatar">?</span>
+          <div id="profile-dropdown" class="profile-dropdown" style="display: none;">
+            <button id="btn-backup-codes" class="btn">Backup Codes</button>
+            <button id="btn-sign-out" class="btn">Sign Out</button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <div class="main-body">
+      <aside class="left-sidebar">
+        <div class="panel-section">
+          <div class="panel-notice">
+            This panel is not online, so your saves will not be available after closing.
+          </div>
+        </div>
+        <div class="panel-multisection">
+          <div class="ms-section-1">DISCORD, INSTAGRAM, PLAYSTATION</div>
+          <div class="ms-section-2">@Konservatory</div>
+          <div class="ms-divider"></div>
+          <div class="ms-section-3">CTA Discord Servers</div>
+          <a href="https://discord.gg/9aj3dvvBHM" target="_blank" class="ms-link">discord.gg/9aj3dvvBHM</a>
+          <a href="https://discord.gg/cjWjduqZFc" target="_blank" class="ms-link">discord.gg/cjWjduqZFc</a>
+          <div class="ms-divider"></div>
+        </div>
+        <button id="btn-reset-all-settings" class="btn btn-reset-all">RESET ALL SETTINGS</button>
+        <div class="panel-info">
+          This editor was created for the intent of making Chicago Transit Authority (CTA) LED-Signs for the Series 5000, and 7000 Railcars, mainly for Roblox Studio use.
+        </div>
+        <div class="panel-section" data-panel-id="rainbow-speed">
+          <div class="panel-header-row">
+            <div class="section-title">Rainbow Speed</div>
+            <button class="btn-customize-panel" data-panel-id="rainbow-speed">Customize Panel</button>
+          </div>
+          <div class="slider-group">
+            <div class="slider-header">
+              <span>Speed</span>
+              <span id="lbl-rainbow-speed">50</span>
+            </div>
+            <input type="range" id="rng-rainbow-speed" class="range-slider" min="0" max="100" value="50">
+          </div>
+        </div>
+        <div class="panel-section" data-panel-id="grid-size">
+          <div class="panel-header-row">
+            <div class="section-title">Grid Size & Ratio</div>
+            <button class="btn-customize-panel" data-panel-id="grid-size">Customize Panel</button>
+          </div>
+          <div class="slider-group">
+            <span class="color-label">Preset Ratio</span>
+            <select id="select-preset-ratio" class="select-input">
+              <option value="72x24" selected>CTA Sign (72×24) - Default</option>
+              <option value="16:9">16:9 (64×36)</option>
+              <option value="9:16">9:16 (36×64)</option>
+              <option value="4:5">4:5 (32×40)</option>
+              <option value="1:1">1:1 (32×32)</option>
+              <option value="4:3">4:3 (48×36)</option>
+              <option value="custom">Custom</option>
+            </select>
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+            <div>
+              <span class="color-label">Width (Cols)</span>
+              <input type="number" id="num-cols" class="hex-input" min="4" max="256" value="72" style="text-align: center;">
+            </div>
+            <div>
+              <span class="color-label">Height (Rows)</span>
+              <input type="number" id="num-rows" class="hex-input" min="4" max="256" value="24" style="text-align: center;">
+            </div>
+          </div>
+          <button id="btn-apply-grid" class="btn btn-primary" style="width: 100%;">Apply Grid Size</button>
+          <button id="btn-reset-grid" class="btn btn-danger" style="width: 100%;">Reset Grid to Default</button>
+        </div>
+        <div class="panel-section" data-panel-id="dot-style">
+          <div class="panel-header-row">
+            <div class="section-title">Dot Appearance</div>
+            <button class="btn-customize-panel" data-panel-id="dot-style">Customize Panel</button>
+          </div>
+          <div style="display: flex; gap: 8px; align-items: center;">
+            <span class="color-label" style="flex: 1;">Dot Shape</span>
+            <select id="select-dot-shape" class="select-input" style="flex: 1.5;">
+              <option value="circle" selected>Circle</option>
+              <option value="square">Square</option>
+            </select>
+          </div>
+          <div class="slider-group" style="margin-top: 4px;">
+            <div class="slider-header">
+              <span>Dot Size</span>
+              <span id="lbl-dot-size">80%</span>
+            </div>
+            <input type="range" id="rng-dot-size" class="range-slider" min="20" max="100" value="80">
+          </div>
+          <button id="btn-reset-dot-style" class="btn btn-danger" style="width: 100%; margin-top: 4px;">Reset Dot Style</button>
+        </div>
+        <div class="panel-section" data-panel-id="colors">
+          <div class="panel-header-row">
+            <div class="section-title">Colors</div>
+            <button class="btn-customize-panel" data-panel-id="colors">Customize Panel</button>
+          </div>
+          <div class="color-grid">
+            <div class="color-row">
+              <span class="color-label">Draw Color</span>
+              <input type="text" id="hex-draw" class="hex-input" maxlength="7" value="#FFFFFF">
+              <div id="prev-draw" class="color-preview-box" title="Click to open Color Wheel"></div>
+            </div>
+            <div class="color-row">
+              <span class="color-label">Fill Color</span>
+              <input type="text" id="hex-fill" class="hex-input" maxlength="7" value="#C60C30">
+              <div id="prev-fill" class="color-preview-box" title="Click to open Color Wheel"></div>
+            </div>
+            <div class="color-row">
+              <span class="color-label">Replace From</span>
+              <input type="text" id="hex-from" class="hex-input" maxlength="7" value="#C60C30">
+              <div id="prev-from" class="color-preview-box" title="Click to open Color Wheel"></div>
+            </div>
+            <div class="color-row">
+              <span class="color-label">Replace To</span>
+              <input type="text" id="hex-to" class="hex-input" maxlength="7" value="#FFD700">
+              <div id="prev-to" class="color-preview-box" title="Click to open Color Wheel"></div>
+            </div>
+          </div>
+        </div>
+        <div class="panel-section" data-panel-id="recent-colors">
+          <div class="panel-header-row">
+            <div class="section-title">Recent Colors</div>
+            <button class="btn-customize-panel" data-panel-id="recent-colors">Customize Panel</button>
+          </div>
+          <div style="display: flex; gap: 8px; align-items: center;">
+            <select id="select-recent" class="select-input" style="flex: 1;">
+              <option value="">(No Recent Colors)</option>
+            </select>
+            <div id="prev-recent" class="color-preview-box" title="Selected Recent Color Swatch"></div>
+          </div>
+          <button id="btn-clear-recent" class="btn btn-danger" style="width: 100%; margin-top: 4px;">Clear Color History</button>
+        </div>
+        <div class="panel-section" data-panel-id="matrix-actions">
+          <div class="panel-header-row">
+            <div class="section-title">Matrix Actions</div>
+            <button class="btn-customize-panel" data-panel-id="matrix-actions">Customize Panel</button>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 6px;">
+            <div style="display: flex; gap: 8px;">
+              <button id="btn-fill" class="btn" style="flex: 1;">Fill Matrix</button>
+              <button id="btn-replace" class="btn" style="flex: 1;">Replace</button>
+            </div>
+            <button id="btn-clear" class="btn btn-danger" style="width: 100%;">Clear Board</button>
+          </div>
+        </div>
+        <div class="panel-section" data-panel-id="view-controls">
+          <div class="panel-header-row">
+            <div class="section-title">View Controls</div>
+            <button class="btn-customize-panel" data-panel-id="view-controls">Customize Panel</button>
+          </div>
+          <div class="slider-group">
+            <div class="slider-header">
+              <span>Zoom</span>
+              <span id="lbl-zoom">100%</span>
+            </div>
+            <input type="range" id="rng-zoom" class="range-slider" min="100" max="1000" value="100">
+          </div>
+          <div class="slider-group">
+            <div class="slider-header">
+              <span>Scroll Horizontal</span>
+              <span id="lbl-scroll-x">50%</span>
+            </div>
+            <input type="range" id="rng-scroll-x" class="range-slider" min="0" max="100" value="50">
+          </div>
+          <div class="slider-group">
+            <div class="slider-header">
+              <span>Scroll Vertical</span>
+              <span id="lbl-scroll-y">50%</span>
+            </div>
+            <input type="range" id="rng-scroll-y" class="range-slider" min="0" max="100" value="50">
+          </div>
+          <div class="slider-group">
+            <div class="slider-header">
+              <span>Glow Intensity</span>
+              <span id="lbl-glow">0%</span>
+            </div>
+            <input type="range" id="rng-glow" class="range-slider" min="0" max="300" value="0">
+          </div>
+          <button id="btn-reset-view" class="btn btn-danger" style="width: 100%; margin-top: 4px;">Reset View Controls</button>
+        </div>
+      </aside>
+
+      <main id="viewport" class="canvas-viewport">
+        <canvas id="matrix-canvas"></canvas>
+      </main>
+
+      <aside id="saves-panel" class="right-sidebar">
+        <div class="sidebar-header">
+          <span>Save Slots</span>
+          <button id="btn-close-saves" class="btn">Close</button>
+        </div>
+        <div id="slots-container" class="slots-list"></div>
+      </aside>
+    </div>
+  </div>
+
+  <!-- General Confirmation Modal -->
+  <div id="modal-container" class="modal-overlay">
+    <div class="modal-card">
+      <div id="modal-title" class="modal-header">Title</div>
+      <div id="modal-body" class="modal-body">Message</div>
+      <div id="modal-footer" class="modal-footer"></div>
+    </div>
+  </div>
+
+  <!-- Deleted Projects Modal -->
+  <div id="deleted-projects-modal" class="modal-overlay">
+    <div class="modal-card" style="max-width: 500px;">
+      <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center;">
+        <span>Deleted Projects (Last 30 Days)</span>
+        <button id="btn-close-deleted" class="btn" style="padding: 2px 8px;">✕</button>
+      </div>
+      <div id="deleted-projects-body" class="modal-body" style="max-height: 350px; overflow-y: auto; gap: 8px;">
+      </div>
+      <div class="modal-footer" style="justify-content: space-between;">
+        <button id="btn-restore-selected" class="btn btn-semi-transparent">Restore Selected</button>
+        <button id="btn-ok-deleted" class="btn">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Restore Destination Modal -->
+  <div id="restore-destination-modal" class="modal-overlay">
+    <div class="modal-card" style="max-width: 500px;">
+      <div class="modal-header">
+        <span>Restore Destination</span>
+      </div>
+      <div id="restore-dest-body" class="modal-body" style="max-height: 60vh; overflow-y: auto; gap: 8px;">
+      </div>
+      <div class="modal-footer">
+        <button id="btn-restore-dest-cancel" class="btn">Cancel</button>
+        <button id="btn-restore-dest-apply" class="btn btn-primary">Apply</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Auth Modal -->
+  <div id="auth-modal" class="modal-overlay">
+    <div class="modal-card" style="max-width: 360px;">
+      <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center;">
+        <span>Account</span>
+        <button id="btn-close-auth" class="btn" style="padding: 2px 8px;">✕</button>
+      </div>
+      <div style="padding: 0;">
+        <div class="auth-tabs">
+          <div class="auth-tab active" data-tab="signin">Sign In</div>
+          <div class="auth-tab" data-tab="signup">Create Account</div>
+        </div>
+        <div class="auth-form" id="auth-form-signin">
+          <input type="text" id="signin-username" class="hex-input" placeholder="Username" autocomplete="username" style="text-transform: none;">
+          <div class="password-wrapper">
+            <input type="password" id="signin-password" class="hex-input password-input" placeholder="Password" autocomplete="current-password">
+            <button type="button" class="password-toggle" data-target="signin-password">👁</button>
+          </div>
+          <a href="#" id="forgot-password-link" style="color: var(--accent-blue); font-size: 11px; margin-top: -6px; align-self: flex-start; text-decoration: none;">Forgot Password?</a>
+          <button id="btn-signin" class="btn btn-primary" style="width:100%;">Sign In</button>
+        </div>
+        <div class="auth-form" id="auth-form-signup" style="display: none;">
+          <input type="email" id="signup-email" class="hex-input" placeholder="Email" autocomplete="email" style="text-transform: none;">
+          <input type="text" id="signup-username" class="hex-input" placeholder="Username" autocomplete="username" style="text-transform: none;">
+          <div class="password-wrapper">
+            <input type="password" id="signup-password" class="hex-input password-input" placeholder="Password" autocomplete="new-password">
+            <button type="button" class="password-toggle" data-target="signup-password">👁</button>
+          </div>
+          <div class="password-wrapper">
+            <input type="password" id="signup-password-confirm" class="hex-input password-input" placeholder="Confirm Password" autocomplete="new-password">
+            <button type="button" class="password-toggle" data-target="signup-password-confirm">👁</button>
+          </div>
+          <button id="btn-signup" class="btn btn-primary" style="width:100%;">Create Account</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Accent Color Picker Modal -->
+  <div id="accent-color-modal" class="modal-overlay">
+    <div class="modal-card" style="max-width: 320px;">
+      <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center;">
+        <span>Accent Color Picker</span>
+        <button id="btn-close-accent" class="btn" style="padding: 2px 8px;">✕</button>
+      </div>
+      <div class="modal-body" style="align-items: center; gap: 12px;">
+        <div style="position: relative; width: 180px; height: 180px;">
+          <canvas id="accent-wheel-canvas" width="180" height="180" style="cursor: crosshair;"></canvas>
+        </div>
+        <div style="display: flex; align-items: center; gap: 10px; width: 100%;">
+          <div id="accent-picker-preview" class="color-preview-box" style="width: 34px; height: 34px; cursor: default;"></div>
+          <input type="text" id="accent-picker-hex" class="hex-input" style="flex: 1; font-size: 14px; text-align: center;" maxlength="7" value="#3B82F6">
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 8px; width: 100%;">
+          <div class="slider-group">
+            <div class="slider-header"><span>Hue</span><span id="lbl-accent-h">217°</span></div>
+            <input type="range" id="rng-accent-h" class="range-slider" min="0" max="360" value="217">
+          </div>
+          <div class="slider-group">
+            <div class="slider-header"><span>Saturation</span><span id="lbl-accent-s">81%</span></div>
+            <input type="range" id="rng-accent-s" class="range-slider" min="0" max="100" value="81">
+          </div>
+        </div>
+        <button id="btn-accent-default" class="btn btn-danger" style="width: 100%;">Reset To Default</button>
+        <div style="display: flex; gap: 8px; width: 100%; align-items: center; background-color: var(--bg-dark); padding: 8px; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+          <div style="display: flex; flex-direction: column; flex: 1; align-items: center; gap: 2px;">
+            <span style="font-size: 10px; color: var(--text-muted); font-weight: 700;">R:</span>
+            <input type="number" id="num-accent-r" class="hex-input" min="0" max="255" value="59" style="text-align: center;">
+          </div>
+          <div style="display: flex; flex-direction: column; flex: 1; align-items: center; gap: 2px;">
+            <span style="font-size: 10px; color: var(--text-muted); font-weight: 700;">G:</span>
+            <input type="number" id="num-accent-g" class="hex-input" min="0" max="255" value="130" style="text-align: center;">
+          </div>
+          <div style="display: flex; flex-direction: column; flex: 1; align-items: center; gap: 2px;">
+            <span style="font-size: 10px; color: var(--text-muted); font-weight: 700;">B:</span>
+            <input type="number" id="num-accent-b" class="hex-input" min="0" max="255" value="246" style="text-align: center;">
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button id="btn-cancel-accent" class="btn">Cancel</button>
+        <button id="btn-apply-accent" class="btn btn-primary">Apply Accent Color</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Color Wheel Picker Modal -->
+  <div id="color-picker-modal" class="modal-overlay">
+    <div class="modal-card" style="max-width: 320px;">
+      <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center;">
+        <span id="picker-title">Color Picker</span>
+        <button id="btn-close-picker" class="btn" style="padding: 2px 8px;">✕</button>
+      </div>
+      <div class="modal-body" style="align-items: center; gap: 12px;">
+        <div style="position: relative; width: 180px; height: 180px;">
+          <canvas id="wheel-canvas" width="180" height="180" style="cursor: crosshair;"></canvas>
+        </div>
+        <div style="display: flex; align-items: center; gap: 10px; width: 100%;">
+          <div id="picker-preview" class="color-preview-box" style="width: 34px; height: 34px; cursor: default;"></div>
+          <input type="text" id="picker-hex" class="hex-input" style="flex: 1; font-size: 14px; text-align: center;" maxlength="7" value="#FFFFFF">
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 8px; width: 100%;">
+          <div class="slider-group">
+            <div class="slider-header"><span>Hue</span><span id="lbl-picker-h">0°</span></div>
+            <input type="range" id="rng-picker-h" class="range-slider" min="0" max="360" value="0">
+          </div>
+          <div class="slider-group">
+            <div class="slider-header"><span>Saturation</span><span id="lbl-picker-s">100%</span></div>
+            <input type="range" id="rng-picker-s" class="range-slider" min="0" max="100" value="100">
+          </div>
+        </div>
+        <div style="display: flex; gap: 8px; width: 100%; align-items: center; background-color: var(--bg-dark); padding: 8px; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+          <div style="display: flex; flex-direction: column; flex: 1; align-items: center; gap: 2px;">
+            <span style="font-size: 10px; color: var(--text-muted); font-weight: 700;">R:</span>
+            <input type="number" id="num-picker-r" class="hex-input" min="0" max="255" value="255" style="text-align: center;">
+          </div>
+          <div style="display: flex; flex-direction: column; flex: 1; align-items: center; gap: 2px;">
+            <span style="font-size: 10px; color: var(--text-muted); font-weight: 700;">G:</span>
+            <input type="number" id="num-picker-g" class="hex-input" min="0" max="255" value="255" style="text-align: center;">
+          </div>
+          <div style="display: flex; flex-direction: column; flex: 1; align-items: center; gap: 2px;">
+            <span style="font-size: 10px; color: var(--text-muted); font-weight: 700;">B:</span>
+            <input type="number" id="num-picker-b" class="hex-input" min="0" max="255" value="255" style="text-align: center;">
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button id="btn-cancel-picker" class="btn">Cancel</button>
+        <button id="btn-apply-picker" class="btn btn-primary">Apply Color</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Panel Border Customizer Modal -->
+  <div id="panel-customize-modal" class="modal-overlay">
+    <div class="modal-card" style="max-width: 340px;">
+      <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center;">
+        <span id="cust-modal-title">Customize Panel Border</span>
+        <button id="btn-close-cust" class="btn" style="padding: 2px 8px;">✕</button>
+      </div>
+      <div class="modal-body" style="align-items: center; gap: 10px; max-height: 80vh; overflow-y: auto;">
+        <div style="width: 100%;">
+          <span class="color-label" style="display: block; margin-bottom: 4px;">Border Option</span>
+          <select id="select-border-mode" class="select-input">
+            <option value="solid" selected>Solid (Single Color)</option>
+            <option value="gradient">Gradient (4 Colors)</option>
+            <option value="neon">Neon (4 Colors)</option>
+            <option value="rainbow">Rainbow (Moving Multi-Color Edge)</option>
+          </select>
+        </div>
+        <div id="cust-swatches-container" style="width: 100%; display: flex; flex-direction: column; gap: 4px;">
+          <span class="color-label">Select Color Slot to Edit</span>
+          <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px;">
+            <div class="cust-swatch-box active" data-slot="0" title="Top / Slot 1">
+              <span class="swatch-label">Top</span>
+              <div id="swatch-prev-0" class="swatch-color-inner"></div>
+            </div>
+            <div class="cust-swatch-box" data-slot="1" title="Right / Slot 2">
+              <span class="swatch-label">Right</span>
+              <div id="swatch-prev-1" class="swatch-color-inner"></div>
+            </div>
+            <div class="cust-swatch-box" data-slot="2" title="Bottom / Slot 3">
+              <span class="swatch-label">Bottom</span>
+              <div id="swatch-prev-2" class="swatch-color-inner"></div>
+            </div>
+            <div class="cust-swatch-box" data-slot="3" title="Left / Slot 4">
+              <span class="swatch-label">Left</span>
+              <div id="swatch-prev-3" class="swatch-color-inner"></div>
+            </div>
+          </div>
+        </div>
+        <div id="cust-live-preview" class="panel-section" style="width: 100%; height: 42px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: var(--text-muted); margin: 2px 0;">
+          Live Border Preview
+        </div>
+        <div style="position: relative; width: 170px; height: 170px;">
+          <canvas id="cust-wheel-canvas" width="170" height="170" style="cursor: crosshair;"></canvas>
+        </div>
+        <div style="display: flex; align-items: center; gap: 10px; width: 100%;">
+          <div id="cust-picker-preview" class="color-preview-box" style="width: 32px; height: 32px; cursor: default;"></div>
+          <input type="text" id="cust-picker-hex" class="hex-input" style="flex: 1; font-size: 13px; text-align: center;" maxlength="7" value="#3B82F6">
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 6px; width: 100%;">
+          <div class="slider-group">
+            <div class="slider-header"><span>Hue</span><span id="lbl-cust-h">0°</span></div>
+            <input type="range" id="rng-cust-h" class="range-slider" min="0" max="360" value="0">
+          </div>
+          <div class="slider-group">
+            <div class="slider-header"><span>Saturation</span><span id="lbl-cust-s">100%</span></div>
+            <input type="range" id="rng-cust-s" class="range-slider" min="0" max="100" value="100">
+          </div>
+          <div class="slider-group">
+            <div class="slider-header"><span>Brightness</span><span id="lbl-cust-v">100%</span></div>
+            <input type="range" id="rng-cust-v" class="range-slider" min="0" max="100" value="100">
+          </div>
+          <div class="slider-group">
+            <div class="slider-header"><span>Glow Intensity</span><span id="lbl-cust-glow">8px</span></div>
+            <input type="range" id="rng-cust-glow" class="range-slider" min="0" max="40" value="8">
+          </div>
+        </div>
+        <div style="display: flex; gap: 8px; width: 100%; align-items: center; background-color: var(--bg-dark); padding: 6px 8px; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+          <div style="display: flex; flex-direction: column; flex: 1; align-items: center; gap: 2px;">
+            <span style="font-size: 9px; color: var(--text-muted); font-weight: 700;">R:</span>
+            <input type="number" id="num-cust-r" class="hex-input" min="0" max="255" value="59" style="text-align: center; padding: 4px;">
+          </div>
+          <div style="display: flex; flex-direction: column; flex: 1; align-items: center; gap: 2px;">
+            <span style="font-size: 9px; color: var(--text-muted); font-weight: 700;">G:</span>
+            <input type="number" id="num-cust-g" class="hex-input" min="0" max="255" value="130" style="text-align: center; padding: 4px;">
+          </div>
+          <div style="display: flex; flex-direction: column; flex: 1; align-items: center; gap: 2px;">
+            <span style="font-size: 9px; color: var(--text-muted); font-weight: 700;">B:</span>
+            <input type="number" id="num-cust-b" class="hex-input" min="0" max="255" value="246" style="text-align: center; padding: 4px;">
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer" style="display: flex; justify-content: space-between;">
+        <button id="btn-reset-cust" class="btn btn-danger">Reset</button>
+        <div style="display: flex; gap: 8px;">
+          <button id="btn-cancel-cust" class="btn">Cancel</button>
+          <button id="btn-apply-cust" class="btn btn-primary">Apply</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const CONFIG = {
+      defaultCols: 72,
+      defaultRows: 24,
+      defaultDotShape: 'circle',
+      defaultDotSize: 80,
+      defaultAccentColor: '#3B82F6',
+      exportWidth: 1536,
+      exportHeight: 512,
+      maxHistory: 100,
+      maxSaveSlots: 50,
+      maxRecentColors: 20,
+      autosaveKey: 'led_matrix_autosave_slot'
+    };
+
+    const STATE = {
+      cols: CONFIG.defaultCols,
+      rows: CONFIG.defaultRows,
+      dotShape: CONFIG.defaultDotShape,
+      dotSize: CONFIG.defaultDotSize,
+      grid: [],
+      zoom: 100,
+      scrollX: 50,
+      scrollY: 50,
+      glow: 0,
+      drawColor: '#FFFFFF',
+      fillColor: '#C60C30',
+      replaceFrom: '#C60C30',
+      replaceTo: '#FFD700',
+      accentColor: CONFIG.defaultAccentColor,
+      recentColors: [],
+      panelStyles: {},
+      history: [],
+      historyIndex: -1,
+      isDrawing: false,
+      lastGridX: -1,
+      lastGridY: -1,
+      projectName: 'Untitled Project',
+      rainbowSpeed: 50,
+      pendingRestore: null,
+      tempSignupData: null
+    };
+
+    const UTILS = {
+      sanitizeHex(val) {
+        val = val.trim().toUpperCase();
+        if (!val.startsWith('#')) val = '#' + val;
+        return val;
+      },
+      isValidHex(hex) {
+        return /^#([0-9A-F]{6})$/.test(hex);
+      },
+      formatDate(ts) {
+        if (!ts) return '';
+        const d = new Date(ts);
+        const dateStr = d.toISOString().split('T')[0];
+        const timeStr = d.toTimeString().split(' ')[0].substring(0, 5);
+        return `${dateStr} ${timeStr}`;
+      }
+    };
+
+    const COLOR_CONVERTER = {
+      hexToRgb(hex) {
+        hex = UTILS.sanitizeHex(hex);
+        if (!UTILS.isValidHex(hex)) return { r: 255, g: 255, b: 255 };
+        const num = parseInt(hex.substring(1), 16);
+        return {
+          r: (num >> 16) & 255,
+          g: (num >> 8) & 255,
+          b: num & 255
+        };
+      },
+      rgbToHex(r, g, b) {
+        r = Math.max(0, Math.min(255, Math.round(r)));
+        g = Math.max(0, Math.min(255, Math.round(g)));
+        b = Math.max(0, Math.min(255, Math.round(b)));
+        return '#' + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1).toUpperCase();
+      },
+      rgbToHsv(r, g, b) {
+        r /= 255; g /= 255; b /= 255;
+        const max = Math.max(r, g, b), min = Math.min(r, g, b);
+        let h = 0, s = 0, v = max;
+        const d = max - min;
+        s = max === 0 ? 0 : d / max;
+        if (max !== min) {
+          switch (max) {
+            case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+            case g: h = (b - r) / d + 2; break;
+            case b: h = (r - g) / d + 4; break;
+          }
+          h /= 6;
+        }
+        return { h: Math.round(h * 360), s: Math.round(s * 100), v: Math.round(v * 100) };
+      },
+      hsvToRgb(h, s, v) {
+        h = (h % 360 + 360) % 360;
+        s = Math.max(0, Math.min(100, s)) / 100;
+        v = Math.max(0, Math.min(100, v)) / 100;
+        const c = v * s;
+        const x = c * (1 - Math.abs((h / 60) % 2 - 1));
+        const m = v - c;
+        let r = 0, g = 0, b = 0;
+        if (h < 60) { r = c; g = x; b = 0; }
+        else if (h < 120) { r = x; g = c; b = 0; }
+        else if (h < 180) { r = 0; g = c; b = x; }
+        else if (h < 240) { r = 0; g = x; b = c; }
+        else if (h < 300) { r = x; g = 0; b = c; }
+        else { r = c; g = 0; b = x; }
+        return {
+          r: Math.round((r + m) * 255),
+          g: Math.round((g + m) * 255),
+          b: Math.round((b + m) * 255)
+        };
+      }
+    };
+
+    function updateCustomizeButtonColors(accentColorHex) {
+      const rgb = COLOR_CONVERTER.hexToRgb(accentColorHex);
+      const luminance = (0.299 * rgb.r + 0.587 * rgb.g + 0.114 * rgb.b) / 255;
+      const textColor = luminance > 0.5 ? '#000000' : '#FFFFFF';
+      document.querySelectorAll('.btn-customize-panel').forEach(btn => {
+        btn.style.backgroundColor = accentColorHex;
+        btn.style.color = textColor;
+      });
+    }
+
+    // Helper: close all modal overlays except the one we are about to open
+    function closeAllModals(exceptContainer) {
+      const allOverlays = document.querySelectorAll('.modal-overlay');
+      allOverlays.forEach(overlay => {
+        if (overlay !== exceptContainer) {
+          overlay.classList.remove('active');
+        }
+      });
+    }
+
+    const DIALOG = {
+      showCustom(title, message, buttons) {
+        const container = document.getElementById('modal-container');
+        closeAllModals(container);               // avoid multiple overlays stacking
+        const alreadyActive = container.classList.contains('active');
+
+        // Update content without touching the active state (no flicker)
+        document.getElementById('modal-title').textContent = title;
+        document.getElementById('modal-body').innerHTML = message;
+        const footer = document.getElementById('modal-footer');
+        footer.innerHTML = '';
+        buttons.forEach(b => {
+          const btn = document.createElement('button');
+          btn.className = `btn ${b.primary ? 'btn-primary' : ''} ${b.danger ? 'btn-danger' : ''}`;
+          if (b.dangerColor) {
+            btn.style.backgroundColor = '#ef4444';
+            btn.style.borderColor = '#ef4444';
+            btn.style.color = '#ffffff';
+          }
+          btn.textContent = b.text;
+          btn.onclick = () => {
+            container.classList.remove('active');
+            if (b.onClick) b.onClick();
+          };
+          footer.appendChild(btn);
+        });
+
+        // Only add the active class if it wasn't already open (preserves the initial fade-in)
+        if (!alreadyActive) {
+          container.classList.add('active');
+        }
+      },
+      showAlert(title, message, onClose) {
+        this.showCustom(title, message, [{ text: 'OK', primary: true, onClick: onClose }]);
+      },
+      showConfirm(title, message, onConfirm, onCancel) {
+        this.showCustom(title, message, [
+          { text: 'Cancel', onClick: onCancel },
+          { text: 'Apply', dangerColor: true, onClick: onConfirm }
+        ]);
+      }
+    };
+
+    // ---------- User Account Management (MODIFIED) ----------
+    const USER_MANAGER = {
+      getUsers() {
+        try { return JSON.parse(localStorage.getItem('led_matrix_users')) || []; } catch(e) { return []; }
+      },
+      setUsers(users) {
+        localStorage.setItem('led_matrix_users', JSON.stringify(users));
+      },
+      getCurrentUser() {
+        return JSON.parse(localStorage.getItem('led_matrix_current_user')) || null;
+      },
+      setCurrentUser(user) {
+        if (user) localStorage.setItem('led_matrix_current_user', JSON.stringify(user));
+        else localStorage.removeItem('led_matrix_current_user');
+        this.updateProfileUI();
+      },
+      signUp(username, password, email) {
+        const users = this.getUsers();
+        if (users.find(u => u.username.toLowerCase() === username.toLowerCase())) {
+          return { success: false, message: 'Username already exists.' };
+        }
+        const backupCodes = this.generateBackupCodes();
+        const pendingUser = {
+          username,
+          password,
+          email,
+          verified: false,
+          backupCodes
+        };
+        return { success: true, pendingUser };
+      },
+      finalizeSignup(user) {
+        const users = this.getUsers();
+        users.push(user);
+        this.setUsers(users);
+        this.setCurrentUser(user);
+      },
+      signIn(username, password) {
+        const users = this.getUsers();
+        const user = users.find(u => u.username.toLowerCase() === username.toLowerCase() && u.password === password);
+        if (user) {
+          this.setCurrentUser(user);
+          return { success: true };
+        }
+        return { success: false, message: 'Invalid username or password.' };
+      },
+      signOut() {
+        this.setCurrentUser(null);
+      },
+      updateProfileUI() {
+        const avatar = document.getElementById('profile-avatar');
+        const user = this.getCurrentUser();
+        if (user) {
+          avatar.textContent = user.username.charAt(0).toUpperCase();
+          avatar.style.color = '#fff';
+          avatar.parentElement.style.backgroundColor = 'var(--accent-blue)';
+        } else {
+          avatar.textContent = '?';
+          avatar.style.color = 'var(--text-muted)';
+          avatar.parentElement.style.backgroundColor = 'var(--card-bg)';
+        }
+      },
+      generateBackupCodes() {
+        const codes = new Set();
+        while (codes.size < 25) {
+          const code = Array.from({ length: 8 }, () => 
+            'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'[Math.floor(Math.random() * 36)]
+          ).join('');
+          codes.add(code);
+        }
+        return Array.from(codes);
+      },
+      findUserByBackupCode(code) {
+        const users = this.getUsers();
+        for (let i = 0; i < users.length; i++) {
+          const user = users[i];
+          if (user.backupCodes && user.backupCodes.includes(code)) {
+            user.backupCodes = user.backupCodes.filter(c => c !== code);
+            this.setUsers(users);
+            return user;
+          }
+        }
+        return null;
+      }
+    };
+
+    // ---------- Password Toggle ----------
+    function initPasswordToggles() {
+      document.querySelectorAll('.password-toggle').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const targetId = btn.getAttribute('data-target');
+          const input = document.getElementById(targetId);
+          if (!input) return;
+          const isPassword = input.type === 'password';
+          input.type = isPassword ? 'text' : 'password';
+          btn.textContent = isPassword ? '🙈' : '👁';
+        });
+      });
+    }
+
+    // ---------- Auth Modal (MODIFIED) ----------
+    const AUTH_MODAL = {
+      currentTab: 'signin',
+      init() {
+        const modal = document.getElementById('auth-modal');
+        document.getElementById('btn-close-auth').onclick = () => modal.classList.remove('active');
+        
+        document.querySelectorAll('.auth-tab').forEach(tab => {
+          tab.addEventListener('click', () => {
+            document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+            const target = tab.dataset.tab;
+            this.currentTab = target;
+            document.getElementById('auth-form-signin').style.display = target === 'signin' ? 'flex' : 'none';
+            document.getElementById('auth-form-signup').style.display = target === 'signup' ? 'flex' : 'none';
+          });
+        });
+
+        document.getElementById('btn-signin').onclick = () => {
+          const username = document.getElementById('signin-username').value.trim();
+          const password = document.getElementById('signin-password').value;
+          if (!username || !password) {
+            modal.classList.remove('active');
+            DIALOG.showAlert('Error', 'Error, please fill all the fields.', () => {
+              this.open('signin');
+            });
+            return;
+          }
+          const result = USER_MANAGER.signIn(username, password);
+          if (result.success) {
+            modal.classList.remove('active');
+            document.getElementById('profile-dropdown').style.display = 'none';
+          } else {
+            DIALOG.showAlert('Sign In Failed', result.message);
+          }
+        };
+
+        document.getElementById('btn-signup').onclick = () => {
+          const email = document.getElementById('signup-email').value.trim();
+          const username = document.getElementById('signup-username').value.trim();
+          const password = document.getElementById('signup-password').value;
+          const confirm = document.getElementById('signup-password-confirm').value;
+          if (!email || !username || !password || !confirm) {
+            modal.classList.remove('active');
+            DIALOG.showAlert('Error', 'Error, please fill all the fields.', () => {
+              this.open('signup');
+            });
+            return;
+          }
+          if (password !== confirm) {
+            DIALOG.showAlert('Error', 'Passwords do not match.');
+            return;
+          }
+          const result = USER_MANAGER.signUp(username, password, email);
+          if (!result.success) {
+            DIALOG.showAlert('Sign Up Failed', result.message);
+            return;
+          }
+          modal.classList.remove('active');
+          STATE.tempSignupData = result.pendingUser;
+          this.showVerification(result.pendingUser);
+        };
+
+        document.getElementById('forgot-password-link').onclick = (e) => {
+          e.preventDefault();
+          modal.classList.remove('active');
+          this.showForgotPasswordModal();
+        };
+
+        initPasswordToggles();
+      },
+      open(tab = 'signin') {
+        this.currentTab = tab;
+        const modal = document.getElementById('auth-modal');
+        document.querySelectorAll('.auth-tab').forEach(t => {
+          t.classList.toggle('active', t.dataset.tab === tab);
+        });
+        document.getElementById('auth-form-signin').style.display = tab === 'signin' ? 'flex' : 'none';
+        document.getElementById('auth-form-signup').style.display = tab === 'signup' ? 'flex' : 'none';
+        document.getElementById('signin-username').value = '';
+        document.getElementById('signin-password').value = '';
+        document.getElementById('signup-email').value = '';
+        document.getElementById('signup-username').value = '';
+        document.getElementById('signup-password').value = '';
+        document.getElementById('signup-password-confirm').value = '';
+        document.querySelectorAll('.password-toggle').forEach(btn => {
+          btn.textContent = '👁';
+          const input = document.getElementById(btn.getAttribute('data-target'));
+          if (input) input.type = 'password';
+        });
+        modal.classList.add('active');
+      },
+      showForgotPasswordModal() {
+        DIALOG.showCustom('Password Recovery', `
+          <p>Choose a recovery option:</p>
+        `, [
+          { text: 'Reset by Email', onClick: () => {
+            DIALOG.showAlert('Email Sent', 'A password reset link has been sent to your email. (Offline simulation)');
+          }},
+          { text: 'Use Backup Code', primary: true, onClick: () => {
+            this.showBackupCodeRecovery();
+          }}
+        ]);
+      },
+      showBackupCodeRecovery() {
+        DIALOG.showCustom('ENTER BACKUP CODE', `
+          <input type="text" id="recovery-backup-code" class="hex-input" placeholder="Enter backup code" style="width:100%; margin-top:8px;" autocomplete="off">
+        `, [
+          { text: 'Cancel' },
+          { text: 'Sign In', primary: true, onClick: () => {
+            const code = document.getElementById('recovery-backup-code').value.trim().toUpperCase();
+            if (!code) {
+              DIALOG.showAlert('Error', 'Please enter a backup code.');
+              return;
+            }
+            const user = USER_MANAGER.findUserByBackupCode(code);
+            if (user) {
+              USER_MANAGER.setCurrentUser(user);
+              DIALOG.showAlert('Success', 'Signed in using backup code.');
+            } else {
+              DIALOG.showAlert('Invalid Code', 'Backup code not recognized or already used.');
+            }
+          }}
+        ]);
+      },
+      showVerification(pendingUser) {
+        const code = Math.floor(100000 + Math.random() * 900000).toString();
+        DIALOG.showCustom('Verify Your Account', `
+          <p>Your verification code is:</p>
+          <p style="font-size: 24px; font-weight: 700; color: var(--accent-blue); letter-spacing: 4px;">${code}</p>
+          <input type="text" id="verify-input" class="hex-input" placeholder="Enter code" style="width:100%; margin-top:8px;">
+        `, [
+          { text: 'Cancel', onClick: () => {
+            STATE.tempSignupData = null;
+          }},
+          { text: 'Verify', primary: true, onClick: () => {
+            const entered = document.getElementById('verify-input').value.trim();
+            if (entered === code) {
+              pendingUser.verified = true;
+              USER_MANAGER.finalizeSignup(pendingUser);
+              STATE.tempSignupData = null;
+              DIALOG.showAlert('Account Verified', 'Your account has been created and verified.');
+            } else {
+              DIALOG.showAlert('Incorrect Code', 'The verification code you entered is incorrect.');
+            }
+          }}
+        ]);
+      }
+    };
+
+    // ---------- Profile Button (MODIFIED) ----------
+    const PROFILE_BUTTON = {
+      init() {
+        const btn = document.getElementById('profile-btn');
+        const dropdown = document.getElementById('profile-dropdown');
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          if (USER_MANAGER.getCurrentUser()) {
+            dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
+          } else {
+            AUTH_MODAL.open('signin');
+          }
+        });
+        document.addEventListener('click', () => {
+          dropdown.style.display = 'none';
+        });
+        document.getElementById('btn-sign-out').addEventListener('click', () => {
+          USER_MANAGER.signOut();
+          dropdown.style.display = 'none';
+        });
+        document.getElementById('btn-backup-codes').addEventListener('click', () => {
+          dropdown.style.display = 'none';
+          const user = USER_MANAGER.getCurrentUser();
+          if (!user || !user.backupCodes) {
+            DIALOG.showAlert('Error', 'No backup codes available.');
+            return;
+          }
+          const codesHtml = user.backupCodes.map(c => `<span style="font-family: monospace; margin: 2px 4px; display: inline-block; background: var(--card-bg); padding: 2px 6px; border-radius: 4px;">${c}</span>`).join(', ');
+          DIALOG.showCustom('Your Backup Codes', `
+            <p style="margin-bottom: 8px;">Keep these codes safe. Each can be used once to recover your account.</p>
+            <div style="max-height: 200px; overflow-y: auto; word-break: break-all; margin-bottom: 12px;">${codesHtml}</div>
+            <button id="copy-backup-codes" class="btn" style="width:100%;">Copy All to Clipboard</button>
+          `, [
+            { text: 'Close', primary: true }
+          ]);
+          setTimeout(() => {
+            const copyBtn = document.getElementById('copy-backup-codes');
+            if (copyBtn) {
+              copyBtn.onclick = () => {
+                navigator.clipboard.writeText(user.backupCodes.join('\n')).then(() => {
+                  copyBtn.textContent = 'Copied!';
+                  setTimeout(() => { copyBtn.textContent = 'Copy All to Clipboard'; }, 2000);
+                });
+              };
+            }
+          }, 0);
+        });
+        USER_MANAGER.updateProfileUI();
+      }
+    };
+
+    const ACCENT_COLOR_MANAGER = {
+      modal: null, canvas: null, ctx: null, hexInput: null, preview: null,
+      rngH: null, rngS: null, numR: null, numG: null, numB: null,
+      currentH: 217, currentS: 81, isDraggingWheel: false, wheelCacheCanvas: null,
+
+      init() {
+        this.modal = document.getElementById('accent-color-modal');
+        this.canvas = document.getElementById('accent-wheel-canvas');
+        this.ctx = this.canvas.getContext('2d');
+        this.hexInput = document.getElementById('accent-picker-hex');
+        this.preview = document.getElementById('accent-picker-preview');
+        this.rngH = document.getElementById('rng-accent-h');
+        this.rngS = document.getElementById('rng-accent-s');
+        this.numR = document.getElementById('num-accent-r');
+        this.numG = document.getElementById('num-accent-g');
+        this.numB = document.getElementById('num-accent-b');
+
+        document.getElementById('btn-accent-wrapper').addEventListener('click', () => this.open());
+        document.getElementById('btn-close-accent').onclick = () => this.close();
+        document.getElementById('btn-cancel-accent').onclick = () => this.close();
+        document.getElementById('btn-apply-accent').onclick = () => this.apply();
+        document.getElementById('btn-accent-default').onclick = () => this.resetToDefault();
+
+        const handleWheelEvent = (e) => {
+          e.preventDefault();
+          const rect = this.canvas.getBoundingClientRect();
+          const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+          const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+          const x = clientX - rect.left, y = clientY - rect.top;
+          const cx = this.canvas.width / 2, cy = this.canvas.height / 2;
+          const dx = x - cx, dy = y - cy, dist = Math.sqrt(dx*dx+dy*dy);
+          const radius = cx - 3;
+          let angle = Math.atan2(dy, dx) * (180 / Math.PI);
+          if (angle < 0) angle += 360;
+          const sat = Math.min(100, (dist / radius) * 100);
+          this.currentH = Math.round(angle);
+          this.currentS = Math.round(sat);
+          this.updateFromHsv();
+        };
+
+        this.canvas.addEventListener('mousedown', e => { this.isDraggingWheel = true; handleWheelEvent(e); });
+        window.addEventListener('mousemove', e => { if (this.isDraggingWheel) handleWheelEvent(e); });
+        window.addEventListener('mouseup', () => { this.isDraggingWheel = false; });
+        this.canvas.addEventListener('touchstart', e => { this.isDraggingWheel = true; handleWheelEvent(e); }, { passive: false });
+        window.addEventListener('touchmove', e => { if (this.isDraggingWheel) handleWheelEvent(e); }, { passive: false });
+        window.addEventListener('touchend', () => { this.isDraggingWheel = false; });
+
+        this.rngH.addEventListener('input', e => { this.currentH = parseInt(e.target.value); this.updateFromHsv(); });
+        this.rngS.addEventListener('input', e => { this.currentS = parseInt(e.target.value); this.updateFromHsv(); });
+
+        const handleRgb = () => {
+          const r = parseInt(this.numR.value||'0'), g = parseInt(this.numG.value||'0'), b = parseInt(this.numB.value||'0');
+          const hsv = COLOR_CONVERTER.rgbToHsv(r,g,b);
+          this.currentH = hsv.h; this.currentS = hsv.s;
+          this.updateUI(COLOR_CONVERTER.rgbToHex(r,g,b), {r,g,b}, hsv);
+        };
+        this.numR.addEventListener('input', handleRgb);
+        this.numG.addEventListener('input', handleRgb);
+        this.numB.addEventListener('input', handleRgb);
+        this.hexInput.addEventListener('input', () => {
+          let val = UTILS.sanitizeHex(this.hexInput.value);
+          if (UTILS.isValidHex(val)) {
+            const rgb = COLOR_CONVERTER.hexToRgb(val);
+            const hsv = COLOR_CONVERTER.rgbToHsv(rgb.r, rgb.g, rgb.b);
+            this.currentH = hsv.h; this.currentS = hsv.s;
+            this.updateUI(val, rgb, hsv);
+          }
+        });
+
+        let angle = 0;
+        const loop = () => {
+          const speed = STATE.rainbowSpeed / 50;
+          angle = (angle + 1.5 * speed) % 360;
+          const wrapper = document.getElementById('btn-accent-wrapper');
+          if (wrapper) wrapper.style.setProperty('--rainbow-angle', `${angle}deg`);
+          document.querySelectorAll('.panel-section[data-border-mode="rainbow"]').forEach(el => el.style.setProperty('--rainbow-angle', `${angle}deg`));
+          requestAnimationFrame(loop);
+        };
+        requestAnimationFrame(loop);
+      },
+
+      open() {
+        const hex = STATE.accentColor;
+        const rgb = COLOR_CONVERTER.hexToRgb(hex);
+        const hsv = COLOR_CONVERTER.rgbToHsv(rgb.r, rgb.g, rgb.b);
+        this.currentH = hsv.h; this.currentS = hsv.s;
+        this.updateUI(hex, rgb, hsv);
+        this.modal.classList.add('active');
+      },
+      close() { this.modal.classList.remove('active'); },
+      apply() {
+        const hex = UTILS.sanitizeHex(this.hexInput.value);
+        if (UTILS.isValidHex(hex)) {
+          STATE.accentColor = hex;
+          updateCustomizeButtonColors(hex);
+        }
+        this.close();
+      },
+      resetToDefault() {
+        const hex = CONFIG.defaultAccentColor;
+        const rgb = COLOR_CONVERTER.hexToRgb(hex);
+        const hsv = COLOR_CONVERTER.rgbToHsv(rgb.r, rgb.g, rgb.b);
+        this.currentH = hsv.h; this.currentS = hsv.s;
+        this.updateUI(hex, rgb, hsv);
+        STATE.accentColor = hex;
+        updateCustomizeButtonColors(hex);
+      },
+      updateFromHsv() {
+        const rgb = COLOR_CONVERTER.hsvToRgb(this.currentH, this.currentS, 100);
+        const hex = COLOR_CONVERTER.rgbToHex(rgb.r, rgb.g, rgb.b);
+        this.updateUI(hex, rgb, { h: this.currentH, s: this.currentS });
+      },
+      updateUI(hex, rgb, hsv) {
+        this.hexInput.value = hex;
+        this.preview.style.backgroundColor = hex;
+        this.rngH.value = hsv.h; this.rngS.value = hsv.s;
+        document.getElementById('lbl-accent-h').textContent = `${hsv.h}°`;
+        document.getElementById('lbl-accent-s').textContent = `${hsv.s}%`;
+        this.numR.value = rgb.r; this.numG.value = rgb.g; this.numB.value = rgb.b;
+        this.drawWheelCanvas();
+      },
+      initWheelCache() {
+        if (this.wheelCacheCanvas) return;
+        const w = this.canvas.width, h = this.canvas.height, cx = w/2, cy = h/2, radius = cx-3;
+        this.wheelCacheCanvas = document.createElement('canvas');
+        this.wheelCacheCanvas.width = w; this.wheelCacheCanvas.height = h;
+        const oCtx = this.wheelCacheCanvas.getContext('2d');
+        const imgData = oCtx.createImageData(w,h);
+        const data = imgData.data;
+        for (let y=0; y<h; y++) {
+          for (let x=0; x<w; x++) {
+            const dx = x-cx, dy = y-cy, dist = Math.sqrt(dx*dx+dy*dy);
+            if (dist <= radius+1) {
+              let angle = Math.atan2(dy, dx) * (180/Math.PI);
+              if (angle < 0) angle += 360;
+              const sat = Math.min(100, (dist/radius)*100);
+              const rgb = COLOR_CONVERTER.hsvToRgb(angle, sat, 100);
+              const idx = (y*w + x)*4;
+              data[idx]=rgb.r; data[idx+1]=rgb.g; data[idx+2]=rgb.b;
+              if (dist > radius-1) data[idx+3] = Math.round(Math.max(0,Math.min(1,radius-dist+1))*255);
+              else data[idx+3] = 255;
+            }
+          }
+        }
+        oCtx.putImageData(imgData,0,0);
+      },
+      drawWheelCanvas() {
+        this.initWheelCache();
+        const w=this.canvas.width, h=this.canvas.height, cx=w/2, cy=h/2, radius=cx-3;
+        this.ctx.clearRect(0,0,w,h);
+        this.ctx.drawImage(this.wheelCacheCanvas,0,0);
+        this.ctx.strokeStyle='rgba(255,255,255,0.15)'; this.ctx.lineWidth=1.5;
+        this.ctx.beginPath(); this.ctx.arc(cx,cy,radius,0,Math.PI*2); this.ctx.stroke();
+        const hRad = (this.currentH * Math.PI)/180;
+        const handleDist = (this.currentS/100)*radius;
+        const hx = cx + handleDist*Math.cos(hRad), hy = cy + handleDist*Math.sin(hRad);
+        this.ctx.strokeStyle='#fff'; this.ctx.lineWidth=2;
+        this.ctx.beginPath(); this.ctx.arc(hx,hy,5,0,Math.PI*2); this.ctx.stroke();
+        this.ctx.strokeStyle='#000'; this.ctx.lineWidth=1;
+        this.ctx.beginPath(); this.ctx.arc(hx,hy,6,0,Math.PI*2); this.ctx.stroke();
+      }
+    };
+
+    function applyPanelStyleToElement(el, style) {
+      if (!el || !style) return;
+      el.classList.add('has-custom-border');
+      el.setAttribute('data-border-mode', style.mode);
+      const c = style.colors || ['#3B82F6','#3B82F6','#3B82F6','#3B82F6'];
+      const glow = style.glow || 0;
+      let bg='', shadow='';
+      if (style.mode==='solid') { bg=c[0]; shadow=glow>0?`0 0 ${glow}px ${c[0]}`:'none'; }
+      else if (style.mode==='gradient') { bg=`conic-gradient(from 45deg, ${c[0]}, ${c[1]}, ${c[2]}, ${c[3]}, ${c[0]})`; shadow=glow>0?`0 0 ${glow}px ${c[0]}`:'none'; }
+      else if (style.mode==='neon') { bg=`conic-gradient(from 45deg, ${c[0]}, ${c[1]}, ${c[2]}, ${c[3]}, ${c[0]})`; shadow=glow>0?`0 0 ${glow}px ${c[0]}, 0 0 ${Math.round(glow*1.5)}px ${c[1]}, 0 0 ${Math.round(glow*2)}px ${c[2]}`:'none'; }
+      else if (style.mode==='rainbow') { bg=`conic-gradient(from var(--rainbow-angle, 0deg), #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #9400d3, #ff0000)`; shadow=glow>0?`0 0 ${glow}px rgba(255,255,255,0.8), 0 0 ${Math.round(glow*1.5)}px rgba(59,130,246,0.6)`:'none'; }
+      el.style.setProperty('--p-border-bg', bg);
+      el.style.setProperty('--p-border-shadow', shadow);
+    }
+    function removePanelStyleFromElement(el) {
+      if (!el) return;
+      el.classList.remove('has-custom-border');
+      el.removeAttribute('data-border-mode');
+      el.style.removeProperty('--p-border-bg');
+      el.style.removeProperty('--p-border-shadow');
+    }
+
+    const RENDERER = {
+      canvas: null, ctx: null, viewport: null, needsRedraw: true,
+      init() {
+        this.canvas = document.getElementById('matrix-canvas');
+        this.ctx = this.canvas.getContext('2d');
+        this.viewport = document.getElementById('viewport');
+        this.resize();
+        window.addEventListener('resize', () => { this.resize(); this.requestRedraw(); });
+      },
+      resize() {
+        this.canvas.width = this.viewport.clientWidth;
+        this.canvas.height = this.viewport.clientHeight;
+      },
+      requestRedraw() { this.needsRedraw = true; },
+      draw() {
+        if (!this.needsRedraw) return;
+        this.needsRedraw = false;
+        const w=this.canvas.width, h=this.canvas.height, ctx=this.ctx;
+        ctx.fillStyle='#0d0e12'; ctx.fillRect(0,0,w,h);
+        const zoomFactor=STATE.zoom/100;
+        const baseCellWidth=(w-40)/STATE.cols, baseCellHeight=(h-40)/STATE.rows;
+        const baseCellSize=Math.max(2, Math.min(baseCellWidth, baseCellHeight));
+        const cellSize=baseCellSize*zoomFactor;
+        const totalWidth=STATE.cols*cellSize, totalHeight=STATE.rows*cellSize;
+        const minOffsetX=Math.min(20, w-totalWidth-20), maxOffsetX=Math.max(20, w-totalWidth-20);
+        const minOffsetY=Math.min(20, h-totalHeight-20), maxOffsetY=Math.max(20, h-totalHeight-20);
+        const offsetX = totalWidth<=w ? (w-totalWidth)/2 : minOffsetX + (STATE.scrollX/100)*(maxOffsetX-minOffsetX);
+        const offsetY = totalHeight<=h ? (h-totalHeight)/2 : minOffsetY + (STATE.scrollY/100)*(maxOffsetY-minOffsetY);
+        this.currentBounds = { offsetX, offsetY, cellSize, totalWidth, totalHeight };
+        const glowFactor=STATE.glow/100, dotScale=STATE.dotSize/100, dotDimension=cellSize*dotScale, radius=dotDimension/2;
+        const isSquare = STATE.dotShape==='square';
+        for (let r=0; r<STATE.rows; r++) {
+          for (let c=0; c<STATE.cols; c++) {
+            const cx = offsetX + (c+0.5)*cellSize, cy = offsetY + (r+0.5)*cellSize;
+            if (cx+radius<0||cx-radius>w||cy+radius<0||cy-radius>h) continue;
+            const color = STATE.grid[r*STATE.cols + c];
+            const isLit = color !== '#000000';
+            ctx.fillStyle='#16171d';
+            if (isSquare) ctx.fillRect(cx-radius, cy-radius, dotDimension, dotDimension);
+            else { ctx.beginPath(); ctx.arc(cx, cy, radius, 0, Math.PI*2); ctx.fill(); }
+            if (isLit) {
+              ctx.fillStyle=color;
+              if (glowFactor>0) { ctx.shadowColor=color; ctx.shadowBlur=(cellSize*0.5)*glowFactor; }
+              else ctx.shadowBlur=0;
+              if (isSquare) ctx.fillRect(cx-radius, cy-radius, dotDimension, dotDimension);
+              else { ctx.beginPath(); ctx.arc(cx, cy, radius, 0, Math.PI*2); ctx.fill(); }
+              ctx.shadowBlur=0;
+            }
+          }
+        }
+      },
+      screenToGrid(screenX, screenY) {
+        if (!this.currentBounds) return null;
+        const { offsetX, offsetY, cellSize } = this.currentBounds;
+        const col = Math.floor((screenX-offsetX)/cellSize);
+        const row = Math.floor((screenY-offsetY)/cellSize);
+        if (col>=0 && col<STATE.cols && row>=0 && row<STATE.rows) return {col, row};
+        return null;
+      }
+    };
+
+    const MATRIX = {
+      init() { STATE.grid = new Array(STATE.cols*STATE.rows).fill('#000000'); },
+      resize(newCols, newRows) {
+        newCols = Math.max(4, Math.min(256, parseInt(newCols)||CONFIG.defaultCols));
+        newRows = Math.max(4, Math.min(256, parseInt(newRows)||CONFIG.defaultRows));
+        if (newCols===STATE.cols && newRows===STATE.rows) return;
+        const newGrid = new Array(newCols*newRows).fill('#000000');
+        for (let r=0; r<Math.min(STATE.rows, newRows); r++)
+          for (let c=0; c<Math.min(STATE.cols, newCols); c++)
+            newGrid[r*newCols+c] = STATE.grid[r*STATE.cols+c];
+        STATE.cols=newCols; STATE.rows=newRows; STATE.grid=newGrid;
+        RENDERER.requestRedraw(); HISTORY.pushState();
+      },
+      setPixel(col, row, color) {
+        if (col>=0 && col<STATE.cols && row>=0 && row<STATE.rows) {
+          STATE.grid[row*STATE.cols+col] = color;
+          RENDERER.requestRedraw();
+        }
+      },
+      fill(color) { STATE.grid.fill(color); RENDERER.requestRedraw(); },
+      replace(fromColor, toColor) {
+        let count=0;
+        for (let i=0; i<STATE.grid.length; i++) if (STATE.grid[i]===fromColor) { STATE.grid[i]=toColor; count++; }
+        RENDERER.requestRedraw(); return count;
+      }
+    };
+
+    const HISTORY = {
+      pushState() {
+        if (STATE.historyIndex < STATE.history.length-1) STATE.history = STATE.history.slice(0, STATE.historyIndex+1);
+        STATE.history.push({ cols: STATE.cols, rows: STATE.rows, grid: [...STATE.grid] });
+        if (STATE.history.length > CONFIG.maxHistory) STATE.history.shift();
+        else STATE.historyIndex++;
+      },
+      undo() {
+        if (STATE.historyIndex>0) {
+          STATE.historyIndex--;
+          const s = STATE.history[STATE.historyIndex];
+          STATE.cols=s.cols; STATE.rows=s.rows; STATE.grid=[...s.grid];
+          document.getElementById('num-cols').value=STATE.cols;
+          document.getElementById('num-rows').value=STATE.rows;
+          RENDERER.requestRedraw();
+        }
+      },
+      redo() {
+        if (STATE.historyIndex < STATE.history.length-1) {
+          STATE.historyIndex++;
+          const s = STATE.history[STATE.historyIndex];
+          STATE.cols=s.cols; STATE.rows=s.rows; STATE.grid=[...s.grid];
+          document.getElementById('num-cols').value=STATE.cols;
+          document.getElementById('num-rows').value=STATE.rows;
+          RENDERER.requestRedraw();
+        }
+      }
+    };
+
+    const DRAWING = {
+      drawLine(x0,y0,x1,y1,color) {
+        const dx=Math.abs(x1-x0), dy=Math.abs(y1-y0), sx=x0<x1?1:-1, sy=y0<y1?1:-1;
+        let err=dx-dy, currX=x0, currY=y0;
+        while(true) {
+          MATRIX.setPixel(currX,currY,color);
+          if (currX===x1 && currY===y1) break;
+          const e2=2*err;
+          if (e2>-dy) { err-=dy; currX+=sx; }
+          if (e2<dx) { err+=dx; currY+=sy; }
+        }
+      }
+    };
+
+    const INPUT = {
+      init() {
+        const canvas = RENDERER.canvas;
+        const startDraw = e => {
+          e.preventDefault();
+          const pos = this.getCanvasCoords(e);
+          const gridPos = RENDERER.screenToGrid(pos.x, pos.y);
+          if (gridPos) {
+            STATE.isDrawing=true; STATE.lastGridX=gridPos.col; STATE.lastGridY=gridPos.row;
+            MATRIX.setPixel(gridPos.col, gridPos.row, STATE.drawColor);
+            COLOR.addRecent(STATE.drawColor);
+          }
+        };
+        const moveDraw = e => {
+          if (!STATE.isDrawing) return;
+          e.preventDefault();
+          const pos = this.getCanvasCoords(e);
+          const gridPos = RENDERER.screenToGrid(pos.x, pos.y);
+          if (gridPos && (gridPos.col!==STATE.lastGridX || gridPos.row!==STATE.lastGridY)) {
+            DRAWING.drawLine(STATE.lastGridX, STATE.lastGridY, gridPos.col, gridPos.row, STATE.drawColor);
+            STATE.lastGridX=gridPos.col; STATE.lastGridY=gridPos.row;
+          }
+        };
+        const stopDraw = () => { if (STATE.isDrawing) { STATE.isDrawing=false; HISTORY.pushState(); } };
+        canvas.addEventListener('mousedown', startDraw);
+        canvas.addEventListener('mousemove', moveDraw);
+        window.addEventListener('mouseup', stopDraw);
+        canvas.addEventListener('touchstart', startDraw, {passive:false});
+        canvas.addEventListener('touchmove', moveDraw, {passive:false});
+        window.addEventListener('touchend', stopDraw);
+        window.addEventListener('touchcancel', stopDraw);
+        canvas.addEventListener('wheel', e => {
+          e.preventDefault();
+          const delta = e.deltaY<0 ? 10 : -10;
+          UI.setZoom(Math.max(100, Math.min(1000, STATE.zoom+delta)));
+        }, {passive:false});
+      },
+      getCanvasCoords(e) {
+        const rect = RENDERER.canvas.getBoundingClientRect();
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        return { x: clientX-rect.left, y: clientY-rect.top };
+      }
+    };
+
+    const COLOR = {
+      init() {
+        this.setupColorInput('hex-draw','prev-draw', v=>STATE.drawColor=v, 'Draw Color');
+        this.setupColorInput('hex-fill','prev-fill', v=>STATE.fillColor=v, 'Fill Color');
+        this.setupColorInput('hex-from','prev-from', v=>STATE.replaceFrom=v, 'Replace From');
+        this.setupColorInput('hex-to','prev-to', v=>STATE.replaceTo=v, 'Replace To');
+        const recentSelect = document.getElementById('select-recent');
+        const recentPrev = document.getElementById('prev-recent');
+        recentSelect.addEventListener('change', e => {
+          if (e.target.value) {
+            const hex = e.target.value;
+            this.setHexInputValue('hex-draw','prev-draw',hex); STATE.drawColor=hex; recentPrev.style.backgroundColor=hex;
+          } else recentPrev.style.backgroundColor='#000000';
+        });
+        recentPrev.addEventListener('click', () => { if (recentSelect.value) COLOR_PICKER.open('hex-draw','Draw Color',recentSelect.value); });
+        document.getElementById('btn-clear-recent').addEventListener('click', () => {
+          DIALOG.showConfirm('Clear Color History?', "Are you sure? This action cannot be undone.", () => {
+            STATE.recentColors=[]; this.updateRecentDropdown();
+          });
+        });
+      },
+      setupColorInput(inputId, previewId, stateSetter, labelName) {
+        const input=document.getElementById(inputId), preview=document.getElementById(previewId);
+        const update = () => {
+          let val = UTILS.sanitizeHex(input.value);
+          input.value = val;
+          if (UTILS.isValidHex(val)) { input.classList.remove('invalid'); preview.style.backgroundColor=val; stateSetter(val); }
+          else input.classList.add('invalid');
+        };
+        input.addEventListener('input', update); input.addEventListener('blur', update);
+        preview.addEventListener('click', () => COLOR_PICKER.open(inputId, labelName, input.value));
+        update();
+      },
+      setHexInputValue(inputId, previewId, hex) {
+        const input=document.getElementById(inputId), preview=document.getElementById(previewId);
+        input.value=hex; input.classList.remove('invalid'); preview.style.backgroundColor=hex;
+      },
+      addRecent(hex) {
+        if (!UTILS.isValidHex(hex)) return;
+        hex = hex.toUpperCase();
+        STATE.recentColors = STATE.recentColors.filter(c=>c!==hex);
+        STATE.recentColors.unshift(hex);
+        if (STATE.recentColors.length > CONFIG.maxRecentColors) STATE.recentColors.pop();
+        this.updateRecentDropdown();
+      },
+      updateRecentDropdown() {
+        const select = document.getElementById('select-recent');
+        const recentPrev = document.getElementById('prev-recent');
+        select.innerHTML = STATE.recentColors.length>0 ? '<option value="">(Select Recent Color)</option>' : '<option value="">(No Recent Colors)</option>';
+        STATE.recentColors.forEach(c => { const opt=document.createElement('option'); opt.value=c; opt.textContent=c; select.appendChild(opt); });
+        recentPrev.style.backgroundColor = (STATE.recentColors.length>0 && select.value) ? select.value : '#000000';
+      }
+    };
+
+    const COLOR_PICKER = {
+      activeInputId: null, currentH:0, currentS:100, isDraggingWheel:false, wheelCacheCanvas:null,
+      init() {
+        this.modal = document.getElementById('color-picker-modal');
+        this.canvas = document.getElementById('wheel-canvas');
+        this.ctx = this.canvas.getContext('2d');
+        this.hexInput = document.getElementById('picker-hex');
+        this.preview = document.getElementById('picker-preview');
+        this.rngH = document.getElementById('rng-picker-h'); this.rngS = document.getElementById('rng-picker-s');
+        this.lblH = document.getElementById('lbl-picker-h'); this.lblS = document.getElementById('lbl-picker-s');
+        this.numR = document.getElementById('num-picker-r'); this.numG = document.getElementById('num-picker-g'); this.numB = document.getElementById('num-picker-b');
+        document.getElementById('btn-close-picker').onclick = () => this.close();
+        document.getElementById('btn-cancel-picker').onclick = () => this.close();
+        document.getElementById('btn-apply-picker').onclick = () => this.apply();
+
+        const handleWheel = e => {
+          e.preventDefault();
+          const rect = this.canvas.getBoundingClientRect();
+          const cx = this.canvas.width/2, cy = this.canvas.height/2, radius = cx-3;
+          const clientX = e.touches?e.touches[0].clientX:e.clientX, clientY = e.touches?e.touches[0].clientY:e.clientY;
+          const x = clientX-rect.left, y = clientY-rect.top;
+          const dx = x-cx, dy = y-cy, dist = Math.sqrt(dx*dx+dy*dy);
+          let angle = Math.atan2(dy, dx)*(180/Math.PI); if (angle<0) angle+=360;
+          const sat = Math.min(100, (dist/radius)*100);
+          this.currentH = Math.round(angle); this.currentS = Math.round(sat);
+          this.updateFromHsv();
+        };
+        this.canvas.addEventListener('mousedown', e => { this.isDraggingWheel=true; handleWheel(e); });
+        window.addEventListener('mousemove', e => { if(this.isDraggingWheel) handleWheel(e); });
+        window.addEventListener('mouseup', () => { this.isDraggingWheel=false; });
+        this.canvas.addEventListener('touchstart', e => { this.isDraggingWheel=true; handleWheel(e); }, {passive:false});
+        window.addEventListener('touchmove', e => { if(this.isDraggingWheel) handleWheel(e); }, {passive:false});
+        window.addEventListener('touchend', () => { this.isDraggingWheel=false; });
+        this.rngH.addEventListener('input', e => { this.currentH=parseInt(e.target.value); this.updateFromHsv(); });
+        this.rngS.addEventListener('input', e => { this.currentS=parseInt(e.target.value); this.updateFromHsv(); });
+        const handleRgb = () => {
+          const r=parseInt(this.numR.value||'0'), g=parseInt(this.numG.value||'0'), b=parseInt(this.numB.value||'0');
+          const hsv = COLOR_CONVERTER.rgbToHsv(r,g,b);
+          this.currentH=hsv.h; this.currentS=hsv.s;
+          this.updateUI(COLOR_CONVERTER.rgbToHex(r,g,b), {r,g,b}, hsv);
+        };
+        this.numR.addEventListener('input', handleRgb); this.numG.addEventListener('input', handleRgb); this.numB.addEventListener('input', handleRgb);
+        this.hexInput.addEventListener('input', () => {
+          let val = UTILS.sanitizeHex(this.hexInput.value);
+          if (UTILS.isValidHex(val)) {
+            const rgb = COLOR_CONVERTER.hexToRgb(val);
+            const hsv = COLOR_CONVERTER.rgbToHsv(rgb.r, rgb.g, rgb.b);
+            this.currentH=hsv.h; this.currentS=hsv.s;
+            this.updateUI(val, rgb, hsv);
+          }
+        });
+      },
+      open(inputId, title, initialHex) {
+        this.activeInputId = inputId;
+        document.getElementById('picker-title').textContent = title || 'Color Picker';
+        initialHex = UTILS.sanitizeHex(initialHex);
+        const rgb = COLOR_CONVERTER.hexToRgb(initialHex);
+        const hsv = COLOR_CONVERTER.rgbToHsv(rgb.r, rgb.g, rgb.b);
+        this.currentH = hsv.h; this.currentS = hsv.s;
+        this.updateUI(initialHex, rgb, hsv);
+        this.modal.classList.add('active');
+      },
+      close() { this.modal.classList.remove('active'); this.activeInputId=null; },
+      apply() {
+        if (this.activeInputId) {
+          const hex = UTILS.sanitizeHex(this.hexInput.value);
+          const previewId = this.activeInputId.replace('hex-','prev-');
+          COLOR.setHexInputValue(this.activeInputId, previewId, hex);
+          if (this.activeInputId==='hex-draw') STATE.drawColor=hex;
+          if (this.activeInputId==='hex-fill') STATE.fillColor=hex;
+          if (this.activeInputId==='hex-from') STATE.replaceFrom=hex;
+          if (this.activeInputId==='hex-to') STATE.replaceTo=hex;
+          COLOR.addRecent(hex);
+        }
+        this.close();
+      },
+      updateFromHsv() {
+        const rgb = COLOR_CONVERTER.hsvToRgb(this.currentH, this.currentS, 100);
+        const hex = COLOR_CONVERTER.rgbToHex(rgb.r, rgb.g, rgb.b);
+        this.updateUI(hex, rgb, {h:this.currentH, s:this.currentS});
+      },
+      updateUI(hex, rgb, hsv) {
+        this.hexInput.value=hex; this.preview.style.backgroundColor=hex;
+        this.rngH.value=hsv.h; this.rngS.value=hsv.s;
+        this.lblH.textContent=`${hsv.h}°`; this.lblS.textContent=`${hsv.s}%`;
+        this.numR.value=rgb.r; this.numG.value=rgb.g; this.numB.value=rgb.b;
+        this.drawWheelCanvas();
+      },
+      initWheelCache() {
+        if (this.wheelCacheCanvas) return;
+        const w=this.canvas.width, h=this.canvas.height, cx=w/2, cy=h/2, radius=cx-3;
+        this.wheelCacheCanvas = document.createElement('canvas');
+        this.wheelCacheCanvas.width=w; this.wheelCacheCanvas.height=h;
+        const oCtx = this.wheelCacheCanvas.getContext('2d');
+        const imgData = oCtx.createImageData(w,h);
+        const data = imgData.data;
+        for (let y=0; y<h; y++) {
+          for (let x=0; x<w; x++) {
+            const dx=x-cx, dy=y-cy, dist=Math.sqrt(dx*dx+dy*dy);
+            if (dist <= radius+1) {
+              let angle = Math.atan2(dy,dx)*(180/Math.PI); if (angle<0) angle+=360;
+              const sat = Math.min(100, (dist/radius)*100);
+              const rgb = COLOR_CONVERTER.hsvToRgb(angle, sat, 100);
+              const idx = (y*w+x)*4;
+              data[idx]=rgb.r; data[idx+1]=rgb.g; data[idx+2]=rgb.b;
+              if (dist > radius-1) data[idx+3] = Math.round(Math.max(0,Math.min(1,radius-dist+1))*255);
+              else data[idx+3] = 255;
+            }
+          }
+        }
+        oCtx.putImageData(imgData,0,0);
+      },
+      drawWheelCanvas() {
+        this.initWheelCache();
+        const w=this.canvas.width, h=this.canvas.height, cx=w/2, cy=h/2, radius=cx-3;
+        this.ctx.clearRect(0,0,w,h); this.ctx.drawImage(this.wheelCacheCanvas,0,0);
+        this.ctx.strokeStyle='rgba(255,255,255,0.15)'; this.ctx.lineWidth=1.5;
+        this.ctx.beginPath(); this.ctx.arc(cx,cy,radius,0,Math.PI*2); this.ctx.stroke();
+        const hRad = (this.currentH*Math.PI)/180;
+        const handleDist = (this.currentS/100)*radius;
+        const hx = cx+handleDist*Math.cos(hRad), hy = cy+handleDist*Math.sin(hRad);
+        this.ctx.strokeStyle='#fff'; this.ctx.lineWidth=2;
+        this.ctx.beginPath(); this.ctx.arc(hx,hy,5,0,Math.PI*2); this.ctx.stroke();
+        this.ctx.strokeStyle='#000'; this.ctx.lineWidth=1;
+        this.ctx.beginPath(); this.ctx.arc(hx,hy,6,0,Math.PI*2); this.ctx.stroke();
+      }
+    };
+
+    const SAVE = {
+      init() {
+        document.getElementById('btn-toggle-saves').onclick = () => document.getElementById('saves-panel').classList.toggle('open');
+        document.getElementById('btn-close-saves').onclick = () => document.getElementById('saves-panel').classList.remove('open');
+        this.renderSlots();
+      },
+      getSlots() {
+        try { const data = localStorage.getItem('led_matrix_save_slots'); if (data) return JSON.parse(data); } catch(e) {}
+        return new Array(CONFIG.maxSaveSlots).fill(null).map((_,i) => ({ name:'Empty', data:null, timestamp:null }));
+      },
+      setSlots(slots) { localStorage.setItem('led_matrix_save_slots', JSON.stringify(slots)); },
+      getDeleted() {
+        try {
+          const data = localStorage.getItem('led_matrix_deleted_projects');
+          if (data) {
+            const list = JSON.parse(data);
+            const now = Date.now();
+            return list.filter(item => (now - item.timestamp) < 30*24*60*60*1000);
+          }
+        } catch(e) {}
+        return [];
+      },
+      setDeleted(list) { localStorage.setItem('led_matrix_deleted_projects', JSON.stringify(list)); },
+      addDeleted(project) { const list = this.getDeleted(); list.unshift(project); this.setDeleted(list); },
+      renderSlots() {
+        const container = document.getElementById('slots-container');
+        container.innerHTML = '';
+        const slots = this.getSlots();
+        slots.forEach((slot, index) => {
+          const card = document.createElement('div'); card.className='slot-card';
+          const isEmpty = !slot.data;
+          card.innerHTML = `
+            <div class="slot-card-top">
+              <span>${slot.name || 'Empty'}</span>
+              <span class="slot-status ${isEmpty?'status-empty':'status-saved'}">${isEmpty?'Empty':'Saved'}</span>
+            </div>
+            <div class="slot-meta">${slot.timestamp ? UTILS.formatDate(slot.timestamp) : 'No data'}</div>
+            <div class="slot-buttons">
+              <button class="slot-btn btn-save-action" data-action="save" data-idx="${index}">Save</button>
+              <button class="slot-btn btn-load-action" data-action="load" data-idx="${index}">Load</button>
+              <button class="slot-btn btn-rename-action" data-action="rename" data-idx="${index}">Rename</button>
+              <button class="slot-btn btn-delete-action" data-action="delete" data-idx="${index}">Delete</button>
+            </div>
+          `;
+          card.querySelectorAll('.slot-btn').forEach(btn => {
+            btn.addEventListener('click', e => {
+              e.stopPropagation();
+              const action = btn.getAttribute('data-action');
+              const idx = parseInt(btn.getAttribute('data-idx'));
+              this.handleSlotAction(idx, action);
+            });
+          });
+          container.appendChild(card);
+        });
+      },
+      handleSlotAction(index, action) {
+        const slots = this.getSlots();
+        const slot = slots[index];
+        const isEmpty = !slot.data;
+        if (STATE.pendingRestore && action==='save') { this.finishPendingRestore(index); return; }
+        if (isEmpty) {
+          if (action==='save') {
+            slot.data = { cols:STATE.cols, rows:STATE.rows, grid:[...STATE.grid] }; slot.timestamp=Date.now();
+            slots[index]=slot; this.setSlots(slots); this.renderSlots();
+            DIALOG.showAlert('Saved', 'Current matrix saved successfully.');
+          } else DIALOG.showAlert('Action Disabled', 'There is no saved data to load/rename/delete.');
+        } else {
+          if (action==='save') {
+            DIALOG.showConfirm('Are you sure?', 'This action will overwrite the current save in this slot.', () => {
+              slot.data = { cols:STATE.cols, rows:STATE.rows, grid:[...STATE.grid] }; slot.timestamp=Date.now();
+              slots[index]=slot; this.setSlots(slots); this.renderSlots();
+            });
+          } else if (action==='load') {
+            DIALOG.showConfirm('Are you sure?', 'Loading this save will overwrite any unsaved progress in the current matrix.', () => {
+              STATE.cols=slot.data.cols; STATE.rows=slot.data.rows; STATE.grid=[...slot.data.grid];
+              document.getElementById('num-cols').value=STATE.cols; document.getElementById('num-rows').value=STATE.rows;
+              RENDERER.requestRedraw(); HISTORY.pushState();
+            });
+          } else if (action==='rename') {
+            DIALOG.showCustom('Rename Save', 'Enter a new name for this save slot.<br><input type="text" id="rename-input" class="hex-input" style="width:100%; margin-top:8px;" value="'+slot.name+'">', [
+              { text:'Cancel' },
+              { text:'Confirm', dangerColor:true, onClick: () => {
+                const inputVal = document.getElementById('rename-input').value.trim();
+                if (inputVal) { slot.name=inputVal; slots[index]=slot; this.setSlots(slots); this.renderSlots(); }
+              }}
+            ]);
+          } else if (action==='delete') {
+            DIALOG.showConfirm('Are you sure?', 'This action will delete the current save in this slot. You can recover this project from the trash.', () => {
+              this.addDeleted({ name:slot.name, data:slot.data, timestamp:slot.timestamp, deletedAt:Date.now(), originalSlotIndex:index });
+              slot.name='Empty'; slot.data=null; slot.timestamp=null; slots[index]=slot;
+              this.setSlots(slots); this.renderSlots();
+            });
+          }
+        }
+      },
+      finishPendingRestore(targetIndex) {
+        if (!STATE.pendingRestore) return;
+        const restore = STATE.pendingRestore;
+        const slots = this.getSlots();
+        const slot = slots[targetIndex];
+        DIALOG.showConfirm('Restore to Slot', `Do you want to restore "${restore.name}" into slot "${slot.name||'Slot '+(targetIndex+1)}"? This will overwrite any existing data.`, () => {
+          slot.data = restore.data; slot.timestamp = restore.timestamp; slot.name = restore.name;
+          slots[targetIndex] = slot; this.setSlots(slots);
+          const deleted = this.getDeleted(); deleted.splice(restore.deletedIndex,1); this.setDeleted(deleted);
+          STATE.pendingRestore = null; this.renderSlots();
+          DIALOG.showAlert('Restored', 'Project restored successfully.');
+        });
+      }
+    };
+
+    const DELETED_PROJECTS = {
+      init() {
+        document.getElementById('btn-deleted-projects').onclick = () => this.open();
+        document.getElementById('btn-close-deleted').onclick = () => this.close();
+        document.getElementById('btn-ok-deleted').onclick = () => this.close();
+        document.getElementById('btn-restore-selected').onclick = () => this.restoreSelected();
+      },
+      open() {
+        const modal = document.getElementById('deleted-projects-modal');
+        const body = document.getElementById('deleted-projects-body');
+        body.innerHTML = '';
+        const deleted = SAVE.getDeleted();
+        if (deleted.length===0) {
+          body.innerHTML = '<div style="text-align:center; color:var(--text-muted); padding:20px;">No deleted projects within the last 30 days.</div>';
+        } else {
+          deleted.forEach((item, index) => {
+            const row = document.createElement('div');
+            row.className = 'deleted-item-row';
+            row.innerHTML = `
+              <input type="checkbox" class="restore-item-checkbox" data-index="${index}">
+              <div style="flex:1;">
+                <div style="font-weight:700; color:var(--text-main);">${item.name}</div>
+                <div class="deleted-item-date">Deleted: ${UTILS.formatDate(item.deletedAt)}</div>
+              </div>
+            `;
+            body.appendChild(row);
+          });
+        }
+        modal.classList.add('active');
+      },
+      close() {
+        document.getElementById('deleted-projects-modal').classList.remove('active');
+      },
+      restoreSelected() {
+        const checkboxes = document.querySelectorAll('.restore-item-checkbox:checked');
+        if (checkboxes.length === 0) return;
+        const deleted = SAVE.getDeleted();
+        const selectedItems = [];
+        checkboxes.forEach(cb => {
+          const idx = parseInt(cb.getAttribute('data-index'));
+          if (deleted[idx]) selectedItems.push({ ...deleted[idx], originalIndex: idx });
+        });
+        this.close();
+        DIALOG.showConfirm('Restore Selected?', `Are you sure you want to restore ${selectedItems.length} file(s)?`, () => this.attemptRestore(selectedItems), () => { this.open(); });
+      },
+      attemptRestore(selectedItems) {
+        const slots = SAVE.getSlots();
+        const okToRestore = [];
+        const conflicts = [];
+        selectedItems.forEach(item => {
+          const originalSlot = item.originalSlotIndex;
+          if (originalSlot !== undefined && slots[originalSlot] && !slots[originalSlot].data) {
+            okToRestore.push({ ...item, destSlot: originalSlot });
+          } else {
+            conflicts.push(item);
+          }
+        });
+        if (conflicts.length === 0) {
+          this.performRestore(okToRestore);
+        } else {
+          this.showDestinationPopup(conflicts, okToRestore);
+        }
+      },
+      showDestinationPopup(conflicts, okToRestore) {
+        const modal = document.getElementById('restore-destination-modal');
+        const body = document.getElementById('restore-dest-body');
+        const slots = SAVE.getSlots();
+        const emptySlots = slots.map((s, i) => ({
+          label: s.name === 'Empty' ? `Slot ${i+1} (Empty)` : `Slot ${i+1} - ${s.name}`,
+          value: i,
+          occupied: !!s.data
+        })).filter(s => !s.occupied);
+        let html = '';
+        conflicts.forEach(item => {
+          html += `<div style="margin-bottom: 8px;">
+            <div style="font-weight:600;">Restore "${item.name}" to:</div>
+            <select class="restore-dest-select select-input" data-original-index="${item.originalIndex}">
+              ${emptySlots.map(s => `<option value="${s.value}">${s.label}</option>`).join('')}
+            </select>
+          </div>`;
+        });
+        body.innerHTML = html;
+        document.getElementById('btn-restore-dest-apply').onclick = () => {
+          const selects = document.querySelectorAll('.restore-dest-select');
+          const selectedSlots = new Set();
+          const destMappings = [];
+          let hasDupe = false;
+          selects.forEach(sel => {
+            const val = parseInt(sel.value);
+            if (selectedSlots.has(val)) {
+              hasDupe = true;
+            } else {
+              selectedSlots.add(val);
+              const originalIdx = parseInt(sel.dataset.originalIndex);
+              const item = conflicts.find(c => c.originalIndex === originalIdx);
+              destMappings.push({ item, destSlot: val });
+            }
+          });
+          if (hasDupe) {
+            DIALOG.showAlert('Duplicate Destination', 'Please select a unique slot for each project.');
+            return;
+          }
+          const allMappings = [...okToRestore, ...destMappings];
+          this.performRestore(allMappings);
+          modal.classList.remove('active');
+        };
+        document.getElementById('btn-restore-dest-cancel').onclick = () => {
+          modal.classList.remove('active');
+          this.open();
+        };
+        modal.classList.add('active');
+      },
+      performRestore(mappings) {
+        const slots = SAVE.getSlots();
+        const deleted = SAVE.getDeleted();
+        mappings.forEach(m => {
+          const item = m.item;
+          slots[m.destSlot] = { name: item.name, data: item.data, timestamp: item.timestamp };
+        });
+        const indicesToRemove = new Set(mappings.map(m => m.item.originalIndex));
+        const remaining = deleted.filter((_, i) => !indicesToRemove.has(i));
+        SAVE.setDeleted(remaining);
+        SAVE.setSlots(slots);
+        SAVE.renderSlots();
+        DIALOG.showAlert('Restored', 'All selected projects restored successfully.');
+      }
+    };
+
+    const PANEL_CUSTOMIZER = {
+      activePanelId:null, activeMode:'solid', activeColors:['#3B82F6','#3B82F6','#3B82F6','#3B82F6'], activeGlow:8,
+      activeSlotIndex:0, currentH:217, currentS:81, currentV:96, isDraggingWheel:false, wheelCacheCanvas:null,
+      init() {
+        document.querySelectorAll('.btn-customize-panel').forEach(btn => {
+          btn.addEventListener('click', e => { e.stopPropagation(); this.open(btn.getAttribute('data-panel-id')); });
+        });
+        this.modal = document.getElementById('panel-customize-modal');
+        this.canvas = document.getElementById('cust-wheel-canvas'); this.ctx = this.canvas.getContext('2d');
+        this.hexInput = document.getElementById('cust-picker-hex'); this.preview = document.getElementById('cust-picker-preview');
+        this.livePreview = document.getElementById('cust-live-preview');
+        this.modeSelect = document.getElementById('select-border-mode');
+        this.rngH = document.getElementById('rng-cust-h'); this.rngS = document.getElementById('rng-cust-s'); this.rngV = document.getElementById('rng-cust-v');
+        this.rngGlow = document.getElementById('rng-cust-glow');
+        this.lblH = document.getElementById('lbl-cust-h'); this.lblS = document.getElementById('lbl-cust-s'); this.lblV = document.getElementById('lbl-cust-v'); this.lblGlow = document.getElementById('lbl-cust-glow');
+        this.numR = document.getElementById('num-cust-r'); this.numG = document.getElementById('num-cust-g'); this.numB = document.getElementById('num-cust-b');
+        document.getElementById('btn-close-cust').onclick = () => this.close();
+        document.getElementById('btn-cancel-cust').onclick = () => this.close();
+        document.getElementById('btn-apply-cust').onclick = () => this.apply();
+        document.getElementById('btn-reset-cust').onclick = () => this.resetPanel();
+        document.querySelectorAll('.cust-swatch-box').forEach(box => box.addEventListener('click', () => this.setActiveSlot(parseInt(box.getAttribute('data-slot')))));
+        this.modeSelect.addEventListener('change', e => {
+          this.activeMode = e.target.value;
+          if (this.activeMode==='solid') this.activeColors = [this.activeColors[0],this.activeColors[0],this.activeColors[0],this.activeColors[0]];
+          this.updateSwatchesVisibility(); this.updateLivePreview();
+        });
+        const handleWheel = e => {
+          e.preventDefault();
+          const rect = this.canvas.getBoundingClientRect();
+          const cx=this.canvas.width/2, cy=this.canvas.height/2, radius=cx-3;
+          const clientX = e.touches?e.touches[0].clientX:e.clientX, clientY = e.touches?e.touches[0].clientY:e.clientY;
+          const x=clientX-rect.left, y=clientY-rect.top;
+          const dx=x-cx, dy=y-cy, dist=Math.sqrt(dx*dx+dy*dy);
+          let angle=Math.atan2(dy,dx)*(180/Math.PI); if(angle<0) angle+=360;
+          const sat=Math.min(100, (dist/radius)*100);
+          this.currentH=Math.round(angle); this.currentS=Math.round(sat);
+          this.updateFromHsv();
+        };
+        this.canvas.addEventListener('mousedown', e => { this.isDraggingWheel=true; handleWheel(e); });
+        window.addEventListener('mousemove', e => { if(this.isDraggingWheel) handleWheel(e); });
+        window.addEventListener('mouseup', () => { this.isDraggingWheel=false; });
+        this.canvas.addEventListener('touchstart', e => { this.isDraggingWheel=true; handleWheel(e); }, {passive:false});
+        window.addEventListener('touchmove', e => { if(this.isDraggingWheel) handleWheel(e); }, {passive:false});
+        window.addEventListener('touchend', () => { this.isDraggingWheel=false; });
+        this.rngH.addEventListener('input', e => { this.currentH=parseInt(e.target.value); this.updateFromHsv(); });
+        this.rngS.addEventListener('input', e => { this.currentS=parseInt(e.target.value); this.updateFromHsv(); });
+        this.rngV.addEventListener('input', e => { this.currentV=parseInt(e.target.value); this.updateFromHsv(); });
+        this.rngGlow.addEventListener('input', e => { this.activeGlow=parseInt(e.target.value); this.lblGlow.textContent=`${this.activeGlow}px`; this.updateLivePreview(); });
+        const handleRgb = () => {
+          const r=parseInt(this.numR.value||'0'), g=parseInt(this.numG.value||'0'), b=parseInt(this.numB.value||'0');
+          const hsv=COLOR_CONVERTER.rgbToHsv(r,g,b);
+          this.currentH=hsv.h; this.currentS=hsv.s; this.currentV=hsv.v;
+          this.updateUI(COLOR_CONVERTER.rgbToHex(r,g,b), {r,g,b}, hsv);
+        };
+        this.numR.addEventListener('input', handleRgb); this.numG.addEventListener('input', handleRgb); this.numB.addEventListener('input', handleRgb);
+        this.hexInput.addEventListener('input', () => {
+          let val=UTILS.sanitizeHex(this.hexInput.value);
+          if (UTILS.isValidHex(val)) {
+            const rgb=COLOR_CONVERTER.hexToRgb(val);
+            const hsv=COLOR_CONVERTER.rgbToHsv(rgb.r, rgb.g, rgb.b);
+            this.currentH=hsv.h; this.currentS=hsv.s; this.currentV=hsv.v;
+            this.updateUI(val, rgb, hsv);
+          }
+        });
+      },
+      open(panelId) {
+        this.activePanelId=panelId;
+        const panelEl=document.querySelector(`.panel-section[data-panel-id="${panelId}"]`);
+        document.getElementById('cust-modal-title').textContent = `Customize: ${panelEl?.querySelector('.section-title')?.textContent || panelId}`;
+        const style = STATE.panelStyles[panelId] || { mode:'solid', colors:['#3B82F6','#3B82F6','#3B82F6','#3B82F6'], glow:8 };
+        this.activeMode=style.mode; this.activeColors=[...style.colors]; this.activeGlow=style.glow; this.activeSlotIndex=0;
+        this.modeSelect.value=this.activeMode; this.rngGlow.value=this.activeGlow; this.lblGlow.textContent=`${this.activeGlow}px`;
+        const hex=this.activeColors[0]; const rgb=COLOR_CONVERTER.hexToRgb(hex); const hsv=COLOR_CONVERTER.rgbToHsv(rgb.r,rgb.g,rgb.b);
+        this.currentH=hsv.h; this.currentS=hsv.s; this.currentV=hsv.v;
+        this.setActiveSlot(0); this.updateSwatchesVisibility(); this.updateUI(hex, rgb, hsv);
+        this.modal.classList.add('active');
+      },
+      close() { this.modal.classList.remove('active'); this.activePanelId=null; },
+      setActiveSlot(slotIndex) {
+        this.activeSlotIndex=slotIndex;
+        document.querySelectorAll('.cust-swatch-box').forEach((b,i) => b.classList.toggle('active', i===slotIndex));
+        const hex=this.activeColors[slotIndex]||'#3B82F6';
+        const rgb=COLOR_CONVERTER.hexToRgb(hex); const hsv=COLOR_CONVERTER.rgbToHsv(rgb.r,rgb.g,rgb.b);
+        this.currentH=hsv.h; this.currentS=hsv.s; this.currentV=hsv.v;
+        this.updateUI(hex, rgb, hsv);
+      },
+      updateSwatchesVisibility() {
+        const container=document.getElementById('cust-swatches-container');
+        if (this.activeMode==='rainbow') container.style.display='none';
+        else {
+          container.style.display='flex';
+          document.querySelectorAll('.cust-swatch-box').forEach((s,i) => s.style.display = (this.activeMode==='solid' && i!==0) ? 'none' : 'flex');
+        }
+      },
+      updateFromHsv() {
+        const rgb=COLOR_CONVERTER.hsvToRgb(this.currentH, this.currentS, this.currentV);
+        const hex=COLOR_CONVERTER.rgbToHex(rgb.r, rgb.g, rgb.b);
+        this.updateUI(hex, rgb, {h:this.currentH, s:this.currentS, v:this.currentV});
+      },
+      updateUI(hex, rgb, hsv) {
+        this.hexInput.value=hex; this.preview.style.backgroundColor=hex;
+        this.rngH.value=hsv.h; this.rngS.value=hsv.s; this.rngV.value=hsv.v;
+        this.lblH.textContent=`${hsv.h}°`; this.lblS.textContent=`${hsv.s}%`; this.lblV.textContent=`${hsv.v}%`;
+        this.numR.value=rgb.r; this.numG.value=rgb.g; this.numB.value=rgb.b;
+        if (this.activeMode==='solid') this.activeColors=[hex,hex,hex,hex];
+        else this.activeColors[this.activeSlotIndex]=hex;
+        this.activeColors.forEach((c,i) => { const el=document.getElementById(`swatch-prev-${i}`); if(el) el.style.backgroundColor=c; });
+        this.drawCustWheelCanvas(); this.updateLivePreview();
+      },
+      updateLivePreview() { applyPanelStyleToElement(this.livePreview, { mode:this.activeMode, colors:this.activeColors, glow:this.activeGlow }); },
+      apply() {
+        if (this.activePanelId) {
+          STATE.panelStyles[this.activePanelId] = { mode:this.activeMode, colors:[...this.activeColors], glow:this.activeGlow };
+          this.applyStyleToPanel(this.activePanelId);
+        }
+        this.close();
+      },
+      resetPanel() {
+        if (this.activePanelId) {
+          delete STATE.panelStyles[this.activePanelId];
+          const el = document.querySelector(`.panel-section[data-panel-id="${this.activePanelId}"]`);
+          if (el) removePanelStyleFromElement(el);
+        }
+        this.close();
+      },
+      applyStyleToPanel(panelId) {
+        const el = document.querySelector(`.panel-section[data-panel-id="${panelId}"]`);
+        if (!el) return;
+        const style = STATE.panelStyles[panelId];
+        if (style) applyPanelStyleToElement(el, style);
+        else removePanelStyleFromElement(el);
+      },
+      initWheelCache() {
+        if (this.wheelCacheCanvas) return;
+        const w=this.canvas.width, h=this.canvas.height, cx=w/2, cy=h/2, radius=cx-3;
+        this.wheelCacheCanvas=document.createElement('canvas'); this.wheelCacheCanvas.width=w; this.wheelCacheCanvas.height=h;
+        const oCtx=this.wheelCacheCanvas.getContext('2d');
+        const imgData=oCtx.createImageData(w,h); const data=imgData.data;
+        for (let y=0; y<h; y++) {
+          for (let x=0; x<w; x++) {
+            const dx=x-cx, dy=y-cy, dist=Math.sqrt(dx*dx+dy*dy);
+            if (dist<=radius+1) {
+              let angle=Math.atan2(dy,dx)*(180/Math.PI); if(angle<0) angle+=360;
+              const sat=Math.min(100,(dist/radius)*100);
+              const rgb=COLOR_CONVERTER.hsvToRgb(angle, sat, 100);
+              const idx=(y*w+x)*4;
+              data[idx]=rgb.r; data[idx+1]=rgb.g; data[idx+2]=rgb.b;
+              if (dist>radius-1) data[idx+3]=Math.round(Math.max(0,Math.min(1,radius-dist+1))*255);
+              else data[idx+3]=255;
+            }
+          }
+        }
+        oCtx.putImageData(imgData,0,0);
+      },
+      drawCustWheelCanvas() {
+        this.initWheelCache();
+        const w=this.canvas.width, h=this.canvas.height, cx=w/2, cy=h/2, radius=cx-3;
+        this.ctx.clearRect(0,0,w,h); this.ctx.drawImage(this.wheelCacheCanvas,0,0);
+        this.ctx.strokeStyle='rgba(255,255,255,0.15)'; this.ctx.lineWidth=1.5;
+        this.ctx.beginPath(); this.ctx.arc(cx,cy,radius,0,Math.PI*2); this.ctx.stroke();
+        const hRad=(this.currentH*Math.PI)/180;
+        const handleDist=(this.currentS/100)*radius;
+        const hx=cx+handleDist*Math.cos(hRad), hy=cy+handleDist*Math.sin(hRad);
+        this.ctx.strokeStyle='#fff'; this.ctx.lineWidth=2;
+        this.ctx.beginPath(); this.ctx.arc(hx,hy,5,0,Math.PI*2); this.ctx.stroke();
+        this.ctx.strokeStyle='#000'; this.ctx.lineWidth=1;
+        this.ctx.beginPath(); this.ctx.arc(hx,hy,6,0,Math.PI*2); this.ctx.stroke();
+      }
+    };
+
+    const UI = {
+      init() {
+        document.getElementById('btn-fill').onclick = () => DIALOG.showConfirm('Are you sure?', 'Filling the Matrix LED will erase any progress you\'ve made.', () => { MATRIX.fill(STATE.fillColor); HISTORY.pushState(); });
+        document.getElementById('btn-replace').onclick = () => DIALOG.showConfirm('Are you sure?', 'Replacing colors can alter your design.', () => { MATRIX.replace(STATE.replaceFrom, STATE.replaceTo); HISTORY.pushState(); });
+        document.getElementById('btn-clear').onclick = () => DIALOG.showConfirm('Clear Board?', 'Are you sure you want to clear the entire matrix?', () => { MATRIX.fill('#000000'); HISTORY.pushState(); });
+        document.getElementById('btn-undo').onclick = () => HISTORY.undo();
+        document.getElementById('btn-redo').onclick = () => HISTORY.redo();
+        document.getElementById('rng-rainbow-speed').addEventListener('input', e => { STATE.rainbowSpeed=parseInt(e.target.value); document.getElementById('lbl-rainbow-speed').textContent=STATE.rainbowSpeed; });
+        document.getElementById('select-preset-ratio').addEventListener('change', e => {
+          const v=e.target.value; const c=document.getElementById('num-cols'), r=document.getElementById('num-rows');
+          if (v==='72x24') { c.value=72; r.value=24; }
+          else if (v==='16:9') { c.value=64; r.value=36; }
+          else if (v==='9:16') { c.value=36; r.value=64; }
+          else if (v==='4:5') { c.value=32; r.value=40; }
+          else if (v==='1:1') { c.value=32; r.value=32; }
+          else if (v==='4:3') { c.value=48; r.value=36; }
+        });
+        document.getElementById('btn-apply-grid').onclick = () => {
+          const c=document.getElementById('num-cols').value, r=document.getElementById('num-rows').value;
+          DIALOG.showConfirm('Are you sure?', 'Resizing the Matrix can and will alter any current design.', () => MATRIX.resize(c, r));
+        };
+        document.getElementById('btn-reset-grid').onclick = () => {
+          DIALOG.showConfirm('Are you sure?', 'Resizing the Matrix can and will alter any current design.', () => {
+            document.getElementById('num-cols').value=CONFIG.defaultCols; document.getElementById('num-rows').value=CONFIG.defaultRows;
+            document.getElementById('select-preset-ratio').value='72x24'; MATRIX.resize(CONFIG.defaultCols, CONFIG.defaultRows);
+          });
+        };
+        document.getElementById('btn-reset-all-settings').onclick = () => {
+          DIALOG.showConfirm('Reset All Settings?', 'This will restore all panels, colors, matrix, and options to their defaults.', () => {
+            STATE.panelStyles={}; document.querySelectorAll('.panel-section[data-panel-id]').forEach(el => removePanelStyleFromElement(el));
+            STATE.drawColor='#FFFFFF'; STATE.fillColor='#C60C30'; STATE.replaceFrom='#C60C30'; STATE.replaceTo='#FFD700';
+            COLOR.setHexInputValue('hex-draw','prev-draw','#FFFFFF'); COLOR.setHexInputValue('hex-fill','prev-fill','#C60C30');
+            COLOR.setHexInputValue('hex-from','prev-from','#C60C30'); COLOR.setHexInputValue('hex-to','prev-to','#FFD700');
+            STATE.recentColors=[]; COLOR.updateRecentDropdown();
+            STATE.rainbowSpeed=50; document.getElementById('rng-rainbow-speed').value=50; document.getElementById('lbl-rainbow-speed').textContent='50';
+            document.getElementById('num-cols').value=CONFIG.defaultCols; document.getElementById('num-rows').value=CONFIG.defaultRows;
+            document.getElementById('select-preset-ratio').value='72x24'; MATRIX.resize(CONFIG.defaultCols, CONFIG.defaultRows); MATRIX.fill('#000000');
+            STATE.dotShape=CONFIG.defaultDotShape; STATE.dotSize=CONFIG.defaultDotSize;
+            document.getElementById('select-dot-shape').value=CONFIG.defaultDotShape; document.getElementById('rng-dot-size').value=CONFIG.defaultDotSize;
+            document.getElementById('lbl-dot-size').textContent=`${CONFIG.defaultDotSize}%`;
+            STATE.accentColor=CONFIG.defaultAccentColor; updateCustomizeButtonColors(CONFIG.defaultAccentColor);
+            this.setZoom(100); STATE.scrollX=50; STATE.scrollY=50; STATE.glow=0;
+            document.getElementById('rng-scroll-x').value=50; document.getElementById('rng-scroll-y').value=50; document.getElementById('rng-glow').value=0;
+            document.getElementById('lbl-scroll-x').textContent='50%'; document.getElementById('lbl-scroll-y').textContent='50%'; document.getElementById('lbl-glow').textContent='0%';
+            RENDERER.requestRedraw(); HISTORY.pushState();
+          });
+        };
+        document.getElementById('select-dot-shape').addEventListener('change', e => { STATE.dotShape=e.target.value; RENDERER.requestRedraw(); });
+        const dotSizeRng = document.getElementById('rng-dot-size');
+        dotSizeRng.addEventListener('input', e => { STATE.dotSize=parseInt(e.target.value); document.getElementById('lbl-dot-size').textContent=`${STATE.dotSize}%`; RENDERER.requestRedraw(); });
+        document.getElementById('btn-reset-dot-style').onclick = () => {
+          document.getElementById('select-dot-shape').value=CONFIG.defaultDotShape; dotSizeRng.value=CONFIG.defaultDotSize;
+          document.getElementById('lbl-dot-size').textContent=`${CONFIG.defaultDotSize}%`;
+          STATE.dotShape=CONFIG.defaultDotShape; STATE.dotSize=CONFIG.defaultDotSize; RENDERER.requestRedraw();
+        };
+        const zoomRng = document.getElementById('rng-zoom');
+        zoomRng.addEventListener('input', e => this.setZoom(parseInt(e.target.value)));
+        const scrollXRng = document.getElementById('rng-scroll-x');
+        scrollXRng.addEventListener('input', e => { STATE.scrollX=parseInt(e.target.value); document.getElementById('lbl-scroll-x').textContent=`${STATE.scrollX}%`; RENDERER.requestRedraw(); });
+        const scrollYRng = document.getElementById('rng-scroll-y');
+        scrollYRng.addEventListener('input', e => { STATE.scrollY=parseInt(e.target.value); document.getElementById('lbl-scroll-y').textContent=`${STATE.scrollY}%`; RENDERER.requestRedraw(); });
+        const glowRng = document.getElementById('rng-glow');
+        glowRng.addEventListener('input', e => { STATE.glow=parseInt(e.target.value); document.getElementById('lbl-glow').textContent=`${STATE.glow}%`; RENDERER.requestRedraw(); });
+        document.getElementById('btn-reset-view').onclick = () => {
+          this.setZoom(100); scrollXRng.value=50; STATE.scrollX=50; document.getElementById('lbl-scroll-x').textContent='50%';
+          scrollYRng.value=50; STATE.scrollY=50; document.getElementById('lbl-scroll-y').textContent='50%';
+          glowRng.value=0; STATE.glow=0; document.getElementById('lbl-glow').textContent='0%'; RENDERER.requestRedraw();
+        };
+        document.getElementById('btn-export').onclick = () => {
+          const exportCanvas = document.createElement('canvas'); exportCanvas.width=CONFIG.exportWidth; exportCanvas.height=CONFIG.exportHeight;
+          const eCtx = exportCanvas.getContext('2d'); eCtx.fillStyle='#0d0e12'; eCtx.fillRect(0,0,exportCanvas.width,exportCanvas.height);
+          const cellW = exportCanvas.width/STATE.cols, cellH = exportCanvas.height/STATE.rows, cellSize = Math.min(cellW, cellH);
+          const dotSize = cellSize*(STATE.dotSize/100), radius = dotSize/2, isSquare = STATE.dotShape==='square';
+          const offsetX = (exportCanvas.width - STATE.cols*cellSize)/2, offsetY = (exportCanvas.height - STATE.rows*cellSize)/2;
+          for (let r=0; r<STATE.rows; r++) {
+            for (let c=0; c<STATE.cols; c++) {
+              const cx = offsetX + (c+0.5)*cellSize, cy = offsetY + (r+0.5)*cellSize;
+              const color = STATE.grid[r*STATE.cols+c]; const isLit = color!=='#000000';
+              eCtx.fillStyle='#16171d';
+              if (isSquare) eCtx.fillRect(cx-radius, cy-radius, dotSize, dotSize);
+              else { eCtx.beginPath(); eCtx.arc(cx, cy, radius, 0, Math.PI*2); eCtx.fill(); }
+              if (isLit) {
+                eCtx.fillStyle=color;
+                if (isSquare) eCtx.fillRect(cx-radius, cy-radius, dotSize, dotSize);
+                else { eCtx.beginPath(); eCtx.arc(cx, cy, radius, 0, Math.PI*2); eCtx.fill(); }
+              }
+            }
+          }
+          const link = document.createElement('a'); link.download='led-matrix-export.png'; link.href=exportCanvas.toDataURL('image/png'); link.click();
+        };
+      },
+      setZoom(val) {
+        STATE.zoom = val; document.getElementById('rng-zoom').value=val;
+        document.getElementById('lbl-zoom').textContent=`${val}%`; RENDERER.requestRedraw();
+      }
+    };
+
+    window.addEventListener('DOMContentLoaded', () => {
+      RENDERER.init(); MATRIX.init(); HISTORY.pushState(); INPUT.init(); COLOR.init(); COLOR_PICKER.init();
+      ACCENT_COLOR_MANAGER.init(); PANEL_CUSTOMIZER.init(); SAVE.init(); DELETED_PROJECTS.init(); UI.init();
+      AUTH_MODAL.init(); PROFILE_BUTTON.init();
+      function anim() { RENDERER.draw(); requestAnimationFrame(anim); } requestAnimationFrame(anim);
+    });
+  </script>
+</body>
+  </html>
